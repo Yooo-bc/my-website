@@ -246,16 +246,6 @@
     }
     .touch-hint {
       display: none;
-      width: fit-content;
-      margin: 10px 0 0;
-      padding: 7px 12px;
-      border: 1px solid rgba(55,109,255,.24);
-      border-radius: 999px;
-      background: rgba(255,255,255,.42);
-      color: #5c70a6;
-      font-size: 13px;
-      line-height: 1.4;
-      letter-spacing: .02em;
     }
     .tags { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
     .tag {
@@ -557,7 +547,7 @@
     }
     @media (hover: none), (pointer: coarse) {
       .section-hint.desktop-copy { display: none; }
-      .touch-hint { display: inline-flex; align-items: center; }
+      .touch-hint { display: block; }
     }
     @media (max-width: 640px) {
       .wrap { width: min(100% - 24px, 980px); padding-top: 28px; }
@@ -621,6 +611,7 @@
       <div class="content" style="text-align:left">
         <h2>我的画</h2>
         <p class="section-hint desktop-copy">摸摸看，点开能放大</p>
+        <p class="section-hint touch-hint">按住稿件后滑动，松手看当前这张</p>
         <div class="stack-area" oncontextmenu="return false">
           <div class="art-stack">
             <div class="art-card card" data-art="files/artwork-01.png">
@@ -645,7 +636,6 @@
               </div>
             </div>
           </div>
-          <p class="touch-hint">按住稿件后滑动，松手看当前这张</p>
           <p class="protected-note">别偷我图，咬你啊。</p>
         </div>
       </div>
@@ -737,6 +727,18 @@
       return el ? el.closest('.art-card') : null;
     };
 
+    const applyCardTransform = (card, rotateX, rotateY) => {
+      if (!card) return;
+      const fanX = card.style.getPropertyValue('--fan-x');
+      const fanY = parseFloat(card.style.getPropertyValue('--fan-y'));
+      const fanRotate = card.style.getPropertyValue('--fan-rotate');
+      const fanScale = card.style.getPropertyValue('--fan-scale');
+      card.style.transform =
+        `translate(${fanX}, ${fanY - PULL_UP}px)` +
+        ` rotateX(${rotateX}deg) rotateY(${rotateY}deg)` +
+        ` rotate(${fanRotate}) scale(${fanScale})`;
+    };
+
     const tiltCardAtPoint = (card, clientX, clientY) => {
       if (!card) return;
       const rect = card.getBoundingClientRect();
@@ -746,14 +748,19 @@
       const cy = rect.height / 2;
       const rotateY = ((mx - cx) / cx) * TILT_MAX;
       const rotateX = ((cy - my) / cy) * TILT_MAX;
-      const fanX = card.style.getPropertyValue('--fan-x');
-      const fanY = parseFloat(card.style.getPropertyValue('--fan-y'));
-      const fanRotate = card.style.getPropertyValue('--fan-rotate');
-      const fanScale = card.style.getPropertyValue('--fan-scale');
-      card.style.transform =
-        `translate(${fanX}, ${fanY - PULL_UP}px)` +
-        ` rotateX(${rotateX}deg) rotateY(${rotateY}deg)` +
-        ` rotate(${fanRotate}) scale(${fanScale})`;
+      applyCardTransform(card, rotateX, rotateY);
+    };
+
+    const TOUCH_TILT_HALF_WIDTH = 120;
+    const TOUCH_TILT_HALF_HEIGHT = 88;
+
+    const tiltTouchCardAtPoint = (card, clientX, clientY) => {
+      if (!card || !touchStart) return;
+      const dx = clientX - touchStart.x;
+      const dy = clientY - touchStart.y;
+      const rotateY = Math.max(-TILT_MAX, Math.min(TILT_MAX, (dx / TOUCH_TILT_HALF_WIDTH) * TILT_MAX));
+      const rotateX = Math.max(-TILT_MAX, Math.min(TILT_MAX, (-dy / TOUCH_TILT_HALF_HEIGHT) * TILT_MAX));
+      applyCardTransform(card, rotateX, rotateY);
     };
 
     const syncCardUnderPoint = (clientX, clientY) => {
@@ -839,21 +846,21 @@
         if (pulledCard) releaseCard(pulledCard, true);
         pullCard(card);
       }
-      tiltCardAtPoint(card, clientX, clientY);
+      tiltTouchCardAtPoint(card, clientX, clientY);
     };
 
     const updateTouchPreviewTarget = (clientX, clientY) => {
       if (!touchPreviewActive || lightboxOpen) return;
       const card = getTouchCardForPoint(clientX);
       if (!card || card === touchCard) {
-        if (touchCard) tiltCardAtPoint(touchCard, clientX, clientY);
+        if (touchCard) tiltTouchCardAtPoint(touchCard, clientX, clientY);
         return;
       }
 
       clearTimeout(leaveTimer);
       releaseCard(touchCard, true);
       pullCard(card);
-      tiltCardAtPoint(card, clientX, clientY);
+      tiltTouchCardAtPoint(card, clientX, clientY);
       touchCard = card;
     };
 
