@@ -357,6 +357,13 @@
       animation: cardTap .28s cubic-bezier(.16, 1, .3, 1);
       z-index: 85 !important;
     }
+    .art-stack.is-touch-preview .art-card:not(.is-pulled) {
+      filter: saturate(.88) brightness(.9);
+      opacity: .72;
+    }
+    .art-stack.is-touch-preview .art-card.is-pulled {
+      filter: brightness(1.1) saturate(1.08);
+    }
     /* 图片灯箱 */
     .img-lightbox {
       position: fixed;
@@ -764,22 +771,77 @@
       leaveTimer = setTimeout(() => { releaseCard(pulledCard); }, 300);
     });
 
-    // —— 触屏支持：与鼠标一致判定，慢滑松手查看 ——
-    let touchStart = null, touchMoved = 0, touchCard = null;
+    const tapOpenCard = (card) => {
+      if (!card || lightboxOpen) return;
+      touchFired = true;
+      card.classList.add('is-tapped');
+      setTimeout(() => {
+        card.classList.remove('is-tapped');
+        openLightbox(card.dataset.art);
+      }, 300);
+    };
+
+    // —— 移动端触屏：短按开图，长按进入独立预览，按住滑动可切换稿件 ——
+    const LONG_PRESS_MS = 360;
+    const TAP_MAX_MOVE = 16;
+    const SCROLL_CANCEL_MOVE = 28;
+    let touchStart = null;
+    let touchMoved = 0;
+    let touchCard = null;
+    let touchPreviewActive = false;
+    let longPressTimer = null;
+
+    const clearLongPressTimer = () => {
+      if (!longPressTimer) return;
+      clearTimeout(longPressTimer);
+      longPressTimer = null;
+    };
+
+    const activateTouchPreview = (card, clientX, clientY) => {
+      if (!card || lightboxOpen) return;
+      touchPreviewActive = true;
+      touchCard = card;
+      artStack.classList.add('is-touch-preview');
+      if (card !== pulledCard) {
+        clearTimeout(leaveTimer);
+        if (pulledCard) releaseCard(pulledCard, true);
+        pullCard(card);
+      }
+      tiltCardAtPoint(card, clientX, clientY);
+    };
+
+    const resetTouchPreview = (release = true) => {
+      clearLongPressTimer();
+      artStack.classList.remove('is-touch-preview');
+      if (release && pulledCard) releaseCard(pulledCard, true);
+      touchPreviewActive = false;
+      touchStart = null;
+      touchMoved = 0;
+      touchCard = null;
+    };
 
     artStack.addEventListener('touchstart', (e) => {
       if (lightboxOpen || e.touches.length !== 1) return;
       const t = e.touches[0];
       touchStart = { x: t.clientX, y: t.clientY };
       touchMoved = 0;
-      touchCard = syncCardUnderPoint(t.clientX, t.clientY);
+      touchPreviewActive = false;
+      touchCard = getCardForPoint(t.clientX, t.clientY);
+      clearLongPressTimer();
+      longPressTimer = setTimeout(() => {
+        activateTouchPreview(touchCard, t.clientX, t.clientY);
+      }, LONG_PRESS_MS);
     }, { passive: false });
 
     artStack.addEventListener('touchmove', (e) => {
       if (!touchStart || lightboxOpen) return;
       const t = e.touches[0];
       touchMoved = Math.hypot(t.clientX - touchStart.x, t.clientY - touchStart.y);
-      if (touchMoved > 25) return; // 快速滑动不触发卡片
+      if (!touchPreviewActive && touchMoved > SCROLL_CANCEL_MOVE) {
+        resetTouchPreview(false);
+        return;
+      }
+      if (!touchPreviewActive) return;
 
       e.preventDefault();
       const card = syncCardUnderPoint(t.clientX, t.clientY);
@@ -787,25 +849,20 @@
     }, { passive: false });
 
     artStack.addEventListener('touchend', () => {
-      if (!touchStart || lightboxOpen) { touchStart = null; return; }
-      const targetCard = touchCard;
-      if (touchMoved < 18 && targetCard) {
-        touchFired = true;
-        targetCard.classList.add('is-tapped');
-        setTimeout(() => {
-          targetCard.classList.remove('is-tapped');
-          openLightbox(targetCard.dataset.art);
-        }, 300);
+      if (!touchStart || lightboxOpen) {
+        resetTouchPreview();
+        return;
       }
-      if (pulledCard) leaveTimer = setTimeout(() => { releaseCard(pulledCard); }, 300);
-      touchStart = null; touchCard = null;
+      const targetCard = touchCard;
+      const shouldOpen = targetCard && (touchPreviewActive || touchMoved < TAP_MAX_MOVE);
+      resetTouchPreview();
+      if (shouldOpen) {
+        tapOpenCard(targetCard);
+      }
     });
 
     artStack.addEventListener('touchcancel', () => {
-      if (pulledCard) releaseCard(pulledCard);
-      touchStart = null;
-      touchMoved = 0;
-      touchCard = null;
+      resetTouchPreview();
     });
 
     // —— 灯箱 ——
