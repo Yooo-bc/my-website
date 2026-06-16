@@ -23,6 +23,7 @@
       color: #27303b;
       background: #c7cbd1;
       overflow-x: hidden;
+      scrollbar-gutter: stable;
     }
     body::before {
       content: "";
@@ -391,8 +392,9 @@
       -webkit-backdrop-filter: blur(12px);
       opacity: 0;
       pointer-events: none;
-      transition: opacity .35s cubic-bezier(.16, 1, .3, 1);
+      transition: opacity .28s cubic-bezier(.16, 1, .3, 1);
     }
+    .img-lightbox.is-opening,
     .img-lightbox.is-open {
       opacity: 1;
       pointer-events: auto;
@@ -407,11 +409,14 @@
       pointer-events: none;
       -webkit-user-drag: none;
       user-select: none;
-      transform: scale(0.9);
-      transition: transform .4s cubic-bezier(.16, 1, .3, 1);
+      transform: translate3d(var(--origin-x, 0px), var(--origin-y, 0px), 0) scale(var(--origin-scale, .9));
+      transform-origin: center center;
+      transition:
+        transform .46s cubic-bezier(.16, 1, .3, 1),
+        box-shadow .46s ease;
     }
     .img-lightbox.is-open img {
-      transform: scale(1);
+      transform: translate3d(0, 0, 0) scale(1);
       box-shadow:
         0 0 80px rgba(59,114,255,.22),
         0 0 160px rgba(220,32,49,.12),
@@ -419,6 +424,10 @@
         0 30px 90px rgba(0,0,0,.5);
       animation: glowPulse 3s ease-in-out infinite;
       animation-delay: .4s;
+    }
+    .img-lightbox.is-closing img {
+      transform: translate3d(var(--origin-x, 0px), var(--origin-y, 0px), 0) scale(var(--origin-scale, .9));
+      animation: none;
     }
     @keyframes glowPulse {
       0%, 100% { box-shadow: 0 0 80px rgba(59,114,255,.22), 0 0 160px rgba(220,32,49,.12), 0 0 40px rgba(255,255,255,.15), 0 30px 90px rgba(0,0,0,.5); }
@@ -923,10 +932,11 @@
       }
       const targetCard = touchCard;
       const shouldOpen = targetCard && touchPreviewActive;
-      resetTouchPreview();
       if (shouldOpen) {
-        openLightbox(targetCard.dataset.art);
+        suppressNextStackClick = false;
+        openLightbox(targetCard.dataset.art, targetCard);
       }
+      resetTouchPreview();
     });
 
     touchTarget.addEventListener('touchcancel', () => {
@@ -934,17 +944,70 @@
     });
 
     // —— 灯箱 ——
-    const openLightbox = (src) => {
-      lightboxImg.src = src;
-      lightbox.classList.add('is-open');
-      lightboxOpen = true;
+    const getScrollbarWidth = () => Math.max(0, window.innerWidth - document.documentElement.clientWidth);
+
+    const lockPageScroll = () => {
+      const scrollbarWidth = getScrollbarWidth();
+      if (scrollbarWidth > 0) {
+        document.body.style.paddingRight = `${scrollbarWidth}px`;
+      }
       document.body.style.overflow = 'hidden';
     };
-    const closeLightbox = () => {
-      lightbox.classList.remove('is-open');
-      lightboxOpen = false;
+
+    const unlockPageScroll = () => {
       document.body.style.overflow = '';
-      setTimeout(() => { lightboxImg.src = ''; }, 300);
+      document.body.style.paddingRight = '';
+    };
+
+    const setLightboxOriginFromCard = (card) => {
+      if (!card) {
+        lightboxImg.style.setProperty('--origin-x', '0px');
+        lightboxImg.style.setProperty('--origin-y', '0px');
+        lightboxImg.style.setProperty('--origin-scale', '.9');
+        return;
+      }
+
+      const rect = card.getBoundingClientRect();
+      const targetScale = Math.min(
+        window.innerWidth * 0.9 / rect.width,
+        window.innerHeight * 0.9 / rect.height,
+        2.2
+      );
+      const targetWidth = rect.width * targetScale;
+      const targetHeight = rect.height * targetScale;
+      const originX = rect.left + rect.width / 2 - window.innerWidth / 2;
+      const originY = rect.top + rect.height / 2 - window.innerHeight / 2;
+      const originScale = Math.max(0.35, Math.min(1, 1 / targetScale));
+
+      lightboxImg.style.width = `${targetWidth}px`;
+      lightboxImg.style.height = `${targetHeight}px`;
+      lightboxImg.style.setProperty('--origin-x', `${originX.toFixed(1)}px`);
+      lightboxImg.style.setProperty('--origin-y', `${originY.toFixed(1)}px`);
+      lightboxImg.style.setProperty('--origin-scale', originScale.toFixed(3));
+    };
+
+    const openLightbox = (src, sourceCard = null) => {
+      setLightboxOriginFromCard(sourceCard);
+      lightboxImg.src = src;
+      lightbox.classList.remove('is-closing', 'is-open');
+      lightbox.classList.add('is-opening');
+      lightboxOpen = true;
+      lockPageScroll();
+      requestAnimationFrame(() => {
+        lightbox.classList.replace('is-opening', 'is-open');
+      });
+    };
+    const closeLightbox = () => {
+      lightbox.classList.remove('is-opening', 'is-open');
+      lightbox.classList.add('is-closing');
+      lightboxOpen = false;
+      setTimeout(() => {
+        lightbox.classList.remove('is-closing');
+        lightboxImg.src = '';
+        lightboxImg.style.width = '';
+        lightboxImg.style.height = '';
+        unlockPageScroll();
+      }, 320);
     };
     lightbox.addEventListener('click', closeLightbox);
     document.addEventListener('keydown', (e) => {
@@ -961,7 +1024,7 @@
       card.classList.add('is-tapped');
       setTimeout(() => {
         card.classList.remove('is-tapped');
-        openLightbox(card.dataset.art);
+        openLightbox(card.dataset.art, card);
       }, 300);
     });
 
