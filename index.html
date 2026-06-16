@@ -303,6 +303,8 @@
       height: 500px;
       margin: 0 auto;
       perspective: 1200px;
+      opacity: 0;
+      transition: opacity .5s ease;
     }
 
     .art-card {
@@ -649,15 +651,9 @@
         background: rgba(18, 22, 30, 0.98);
         backdrop-filter: none;
         -webkit-backdrop-filter: none;
-        transition: none;
-      }
-      .lightbox-frame {
-        transform: none;
-        transition: none;
       }
       .img-lightbox.is-open .lightbox-frame,
       .img-lightbox.is-closing .lightbox-frame {
-        transform: none;
         animation: none;
       }
     }
@@ -890,6 +886,7 @@
       });
     };
     computeFanLayout();
+    artStack.style.opacity = '1';
 
     // —— 悬停：elementFromPoint 精准命中，零边界抖动 ——
     const TILT_MAX = 20;
