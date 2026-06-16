@@ -244,6 +244,19 @@
       animation-delay: .3s;
       will-change: transform;
     }
+    .touch-hint {
+      display: none;
+      width: fit-content;
+      margin: 10px 0 0;
+      padding: 7px 12px;
+      border: 1px solid rgba(55,109,255,.24);
+      border-radius: 999px;
+      background: rgba(255,255,255,.42);
+      color: #5c70a6;
+      font-size: 13px;
+      line-height: 1.4;
+      letter-spacing: .02em;
+    }
     .tags { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
     .tag {
       border-radius: 999px;
@@ -542,6 +555,10 @@
       .stack-area { min-height: 500px; }
       .art-stack { width: min(300px, 82vw); height: 420px; }
     }
+    @media (hover: none), (pointer: coarse) {
+      .section-hint.desktop-copy { display: none; }
+      .touch-hint { display: inline-flex; align-items: center; }
+    }
     @media (max-width: 640px) {
       .wrap { width: min(100% - 24px, 980px); padding-top: 28px; }
       .flip-card, .flip-inner, .face { min-height: 600px; }
@@ -603,7 +620,7 @@
     <section class="glass-section reveal" id="showcase">
       <div class="content" style="text-align:left">
         <h2>我的画</h2>
-        <p class="section-hint">摸摸看，点开能放大</p>
+        <p class="section-hint desktop-copy">摸摸看，点开能放大</p>
         <div class="stack-area" oncontextmenu="return false">
           <div class="art-stack">
             <div class="art-card card" data-art="files/artwork-01.png">
@@ -628,6 +645,7 @@
               </div>
             </div>
           </div>
+          <p class="touch-hint">按住稿件后滑动，松手看当前这张</p>
           <p class="protected-note">别偷我图，咬你啊。</p>
         </div>
       </div>
@@ -771,25 +789,18 @@
       leaveTimer = setTimeout(() => { releaseCard(pulledCard); }, 300);
     });
 
-    const tapOpenCard = (card) => {
-      if (!card || lightboxOpen) return;
-      touchFired = true;
-      card.classList.add('is-tapped');
-      setTimeout(() => {
-        card.classList.remove('is-tapped');
-        openLightbox(card.dataset.art);
-      }, 300);
-    };
-
-    // —— 移动端触屏：短按开图，长按进入独立预览，按住滑动可切换稿件 ——
+    // —— 移动端触屏：长按进入独立预览，按住滑动可切换稿件 ——
     const LONG_PRESS_MS = 360;
-    const TAP_MAX_MOVE = 16;
+    const PREVIEW_SWITCH_DISTANCE = 40;
+    const SWITCH_COOLDOWN_MS = 220;
     const SCROLL_CANCEL_MOVE = 28;
     let touchStart = null;
     let touchMoved = 0;
     let touchCard = null;
     let touchPreviewActive = false;
     let longPressTimer = null;
+    let touchSwitchCooldownUntil = 0;
+    let touchAnchor = null;
 
     const clearLongPressTimer = () => {
       if (!longPressTimer) return;
@@ -801,6 +812,7 @@
       if (!card || lightboxOpen) return;
       touchPreviewActive = true;
       touchCard = card;
+      touchAnchor = { x: clientX, y: clientY };
       artStack.classList.add('is-touch-preview');
       if (card !== pulledCard) {
         clearTimeout(leaveTimer);
@@ -808,6 +820,33 @@
         pullCard(card);
       }
       tiltCardAtPoint(card, clientX, clientY);
+    };
+
+    const updateTouchPreviewTarget = (clientX, clientY) => {
+      if (!touchPreviewActive || lightboxOpen) return;
+      const now = Date.now();
+      if (now < touchSwitchCooldownUntil) return;
+      const card = getCardForPoint(clientX, clientY);
+      if (!card || card === touchCard) {
+        if (touchCard) tiltCardAtPoint(touchCard, clientX, clientY);
+        return;
+      }
+
+      const movedFromAnchor = touchAnchor
+        ? Math.hypot(clientX - touchAnchor.x, clientY - touchAnchor.y)
+        : PREVIEW_SWITCH_DISTANCE;
+      if (movedFromAnchor < PREVIEW_SWITCH_DISTANCE) {
+        if (touchCard) tiltCardAtPoint(touchCard, clientX, clientY);
+        return;
+      }
+
+      clearTimeout(leaveTimer);
+      releaseCard(touchCard, true);
+      pullCard(card);
+      tiltCardAtPoint(card, clientX, clientY);
+      touchCard = card;
+      touchAnchor = { x: clientX, y: clientY };
+      touchSwitchCooldownUntil = now + SWITCH_COOLDOWN_MS;
     };
 
     const resetTouchPreview = (release = true) => {
@@ -818,6 +857,7 @@
       touchStart = null;
       touchMoved = 0;
       touchCard = null;
+      touchAnchor = null;
     };
 
     artStack.addEventListener('touchstart', (e) => {
@@ -827,6 +867,8 @@
       touchMoved = 0;
       touchPreviewActive = false;
       touchCard = getCardForPoint(t.clientX, t.clientY);
+      touchSwitchCooldownUntil = 0;
+      touchAnchor = null;
       clearLongPressTimer();
       longPressTimer = setTimeout(() => {
         activateTouchPreview(touchCard, t.clientX, t.clientY);
@@ -844,8 +886,7 @@
       if (!touchPreviewActive) return;
 
       e.preventDefault();
-      const card = syncCardUnderPoint(t.clientX, t.clientY);
-      if (card) touchCard = card;
+      updateTouchPreviewTarget(t.clientX, t.clientY);
     }, { passive: false });
 
     artStack.addEventListener('touchend', () => {
@@ -854,10 +895,10 @@
         return;
       }
       const targetCard = touchCard;
-      const shouldOpen = targetCard && (touchPreviewActive || touchMoved < TAP_MAX_MOVE);
+      const shouldOpen = targetCard && touchPreviewActive;
       resetTouchPreview();
       if (shouldOpen) {
-        tapOpenCard(targetCard);
+        openLightbox(targetCard.dataset.art);
       }
     });
 
@@ -883,10 +924,7 @@
       if (e.key === 'Escape' && lightboxOpen) closeLightbox();
     });
 
-    // —— 点击卡片：回弹 → 灯箱 ——
-    let touchFired = false;
     artStack.addEventListener('click', (e) => {
-      if (touchFired) { touchFired = false; return; } // 触屏已处理
       const card = e.target.closest('.art-card');
       if (!card || lightboxOpen) return;
       card.classList.add('is-tapped');
