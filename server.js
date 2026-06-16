@@ -4,7 +4,7 @@ const path = require('path');
 const crypto = require('crypto');
 
 const PORT = 3456;
-const PASSWORD = 'wolf123';
+const PASSWORD = process.env.ADMIN_PASSWORD || 'wolf123';
 const ROOT = __dirname;
 
 const tokens = new Set();
