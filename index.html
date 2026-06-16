@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no">
   <title>驳川小站</title>
   <style>
     * {
@@ -24,6 +24,7 @@
       background: #c7cbd1;
       overflow-x: hidden;
       scrollbar-gutter: stable;
+      touch-action: manipulation;
     }
     body::before {
       content: "";
@@ -1183,7 +1184,7 @@
     const DPR = Math.min(window.devicePixelRatio || 1, 2);
     let lightboxCanvasEl = null;
     let lightboxCanvasCtx = null;
-    let watermarkRafId = null;
+    let watermarkTimerId = null;
     let watermarkPhase = 0;
 
     const startLightboxWatermark = () => {
@@ -1249,7 +1250,7 @@
           const cols = Math.ceil(diagonal / step) + 6;
           const rows = 6;
 
-          watermarkPhase = (watermarkPhase + 0.55) % step;
+          watermarkPhase = (watermarkPhase + 1.1) % step;
 
           for (let row = 0; row < rows; row++) {
             const y = (row - (rows - 1) / 2) * fontSize * 3.8;
@@ -1272,7 +1273,7 @@
           }
 
           ctx.restore();
-          watermarkRafId = requestAnimationFrame(draw);
+          watermarkTimerId = setTimeout(draw, 34);
         };
         draw();
       };
@@ -1285,9 +1286,9 @@
     };
 
     const stopLightboxWatermark = () => {
-      if (watermarkRafId) {
-        cancelAnimationFrame(watermarkRafId);
-        watermarkRafId = null;
+      if (watermarkTimerId) {
+        clearTimeout(watermarkTimerId);
+        watermarkTimerId = null;
       }
       lightboxCanvasCtx = null;
       lightboxCanvasEl = null;
