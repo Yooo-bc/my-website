@@ -5,7 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>驳川小站</title>
   <style>
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
 
     /* ====== 字体体系 ====== */
     :root {
@@ -282,6 +285,14 @@
       min-height: 580px;
       margin-top: 28px;
       padding-bottom: clamp(72px, 8vw, 112px);
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    #showcase, #showcase * {
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+    }
+    #showcase {
       user-select: none;
       -webkit-user-select: none;
     }
@@ -609,7 +620,7 @@
     <div class="spacer"></div>
     <section class="glass-section reveal" id="showcase">
       <div class="content" style="text-align:left">
-        <h2>我的画</h2>
+        <h2>狼的照片</h2>
         <p class="section-hint desktop-copy">摸摸看，点开能放大</p>
         <p class="section-hint touch-hint">按住稿件后滑动，松手看当前这张</p>
         <div class="stack-area" oncontextmenu="return false">
@@ -665,6 +676,7 @@
     });
 
     // ========== 扇形稿件堆叠 + 灯箱 ==========
+    const showcaseTouchArea = document.querySelector('#showcase > .content');
     const artStack = document.querySelector('.art-stack');
     const lightbox = document.getElementById('imgLightbox');
     const lightboxImg = document.getElementById('lightboxImg');
@@ -874,7 +886,9 @@
       touchCard = null;
     };
 
-    artStack.addEventListener('touchstart', (e) => {
+    const touchTarget = showcaseTouchArea || artStack;
+
+    touchTarget.addEventListener('touchstart', (e) => {
       if (lightboxOpen || e.touches.length !== 1) return;
       const t = e.touches[0];
       touchStart = { x: t.clientX, y: t.clientY };
@@ -888,7 +902,7 @@
       }, LONG_PRESS_MS);
     }, { passive: false });
 
-    artStack.addEventListener('touchmove', (e) => {
+    touchTarget.addEventListener('touchmove', (e) => {
       if (!touchStart || lightboxOpen) return;
       const t = e.touches[0];
       touchMoved = Math.hypot(t.clientX - touchStart.x, t.clientY - touchStart.y);
@@ -902,7 +916,7 @@
       updateTouchPreviewTarget(t.clientX, t.clientY);
     }, { passive: false });
 
-    artStack.addEventListener('touchend', () => {
+    touchTarget.addEventListener('touchend', () => {
       if (!touchStart || lightboxOpen) {
         resetTouchPreview();
         return;
@@ -915,7 +929,7 @@
       }
     });
 
-    artStack.addEventListener('touchcancel', () => {
+    touchTarget.addEventListener('touchcancel', () => {
       resetTouchPreview();
     });
 
