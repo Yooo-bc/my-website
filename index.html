@@ -707,6 +707,44 @@
       if (pulledCard === card) pulledCard = null;
     };
 
+    const getCardForPoint = (clientX, clientY) => {
+      const el = document.elementFromPoint(clientX, clientY);
+      return el ? el.closest('.art-card') : null;
+    };
+
+    const tiltCardAtPoint = (card, clientX, clientY) => {
+      if (!card) return;
+      const rect = card.getBoundingClientRect();
+      const mx = clientX - rect.left;
+      const my = clientY - rect.top;
+      const cx = rect.width / 2;
+      const cy = rect.height / 2;
+      const rotateY = ((mx - cx) / cx) * TILT_MAX;
+      const rotateX = ((cy - my) / cy) * TILT_MAX;
+      const fanX = card.style.getPropertyValue('--fan-x');
+      const fanY = parseFloat(card.style.getPropertyValue('--fan-y'));
+      const fanRotate = card.style.getPropertyValue('--fan-rotate');
+      const fanScale = card.style.getPropertyValue('--fan-scale');
+      card.style.transform =
+        `translate(${fanX}, ${fanY - PULL_UP}px)` +
+        ` rotateX(${rotateX}deg) rotateY(${rotateY}deg)` +
+        ` rotate(${fanRotate}) scale(${fanScale})`;
+    };
+
+    const syncCardUnderPoint = (clientX, clientY) => {
+      if (lightboxOpen) return null;
+      const card = getCardForPoint(clientX, clientY);
+      if (card !== pulledCard) {
+        clearTimeout(leaveTimer);
+        if (pulledCard) releaseCard(pulledCard, !!card);
+        if (card) pullCard(card);
+      }
+      if (card && card === pulledCard) {
+        tiltCardAtPoint(card, clientX, clientY);
+      }
+      return card;
+    };
+
     let pendingMove = null, rafId = null;
     artStack.addEventListener('mousemove', (e) => {
       if (lightboxOpen) return;
@@ -717,33 +755,7 @@
         const ev = pendingMove;
         if (!ev) return;
         pendingMove = null;
-
-        const el = document.elementFromPoint(ev.clientX, ev.clientY);
-        const card = el ? el.closest('.art-card') : null;
-
-        if (card !== pulledCard) {
-          clearTimeout(leaveTimer);
-          if (pulledCard) releaseCard(pulledCard, !!card);
-          if (card) pullCard(card);
-        }
-
-        if (card && card === pulledCard) {
-          const rect = card.getBoundingClientRect();
-          const mx = ev.clientX - rect.left;
-          const my = ev.clientY - rect.top;
-          const cx = rect.width / 2;
-          const cy = rect.height / 2;
-          const rotateY = ((mx - cx) / cx) * TILT_MAX;
-          const rotateX = ((cy - my) / cy) * TILT_MAX;
-          const fanX = card.style.getPropertyValue('--fan-x');
-          const fanY = parseFloat(card.style.getPropertyValue('--fan-y'));
-          const fanRotate = card.style.getPropertyValue('--fan-rotate');
-          const fanScale = card.style.getPropertyValue('--fan-scale');
-          card.style.transform =
-            `translate(${fanX}, ${fanY - PULL_UP}px)` +
-            ` rotateX(${rotateX}deg) rotateY(${rotateY}deg)` +
-            ` rotate(${fanRotate}) scale(${fanScale})`;
-        }
+        syncCardUnderPoint(ev.clientX, ev.clientY);
       });
     });
 
@@ -760,7 +772,7 @@
       const t = e.touches[0];
       touchStart = { x: t.clientX, y: t.clientY };
       touchMoved = 0;
-      touchCard = getCardForPoint(t.clientX, t.clientY);
+      touchCard = syncCardUnderPoint(t.clientX, t.clientY);
     }, { passive: false });
 
     artStack.addEventListener('touchmove', (e) => {
@@ -769,42 +781,31 @@
       touchMoved = Math.hypot(t.clientX - touchStart.x, t.clientY - touchStart.y);
       if (touchMoved > 25) return; // 快速滑动不触发卡片
 
-      const card = getCardForPoint(t.clientX, t.clientY);
-      if (card !== pulledCard) {
-        clearTimeout(leaveTimer);
-        if (pulledCard) releaseCard(pulledCard, !!card);
-        if (card) pullCard(card);
-      }
-      if (card && card === pulledCard) {
-        const rect = card.getBoundingClientRect();
-        const mx = t.clientX - rect.left;
-        const my = t.clientY - rect.top;
-        const cx = rect.width / 2, cy = rect.height / 2;
-        const rY = ((mx - cx) / cx) * TILT_MAX;
-        const rX = ((cy - my) / cy) * TILT_MAX;
-        const fX = card.style.getPropertyValue('--fan-x');
-        const fY = parseFloat(card.style.getPropertyValue('--fan-y'));
-        const fR = card.style.getPropertyValue('--fan-rotate');
-        const fS = card.style.getPropertyValue('--fan-scale');
-        card.style.transform =
-          `translate(${fX}, ${fY - PULL_UP}px)` +
-          ` rotateX(${rX}deg) rotateY(${rY}deg)` +
-          ` rotate(${fR}) scale(${fS})`;
-      }
+      e.preventDefault();
+      const card = syncCardUnderPoint(t.clientX, t.clientY);
+      if (card) touchCard = card;
     }, { passive: false });
 
     artStack.addEventListener('touchend', () => {
       if (!touchStart || lightboxOpen) { touchStart = null; return; }
-      if (touchMoved < 18 && touchCard) {
+      const targetCard = touchCard;
+      if (touchMoved < 18 && targetCard) {
         touchFired = true;
-        touchCard.classList.add('is-tapped');
+        targetCard.classList.add('is-tapped');
         setTimeout(() => {
-          touchCard.classList.remove('is-tapped');
-          openLightbox(touchCard.dataset.art);
+          targetCard.classList.remove('is-tapped');
+          openLightbox(targetCard.dataset.art);
         }, 300);
       }
       if (pulledCard) leaveTimer = setTimeout(() => { releaseCard(pulledCard); }, 300);
       touchStart = null; touchCard = null;
+    });
+
+    artStack.addEventListener('touchcancel', () => {
+      if (pulledCard) releaseCard(pulledCard);
+      touchStart = null;
+      touchMoved = 0;
+      touchCard = null;
     });
 
     // —— 灯箱 ——
