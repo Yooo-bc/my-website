@@ -406,6 +406,7 @@
       height: min(90vh, 900px);
       overflow: hidden;
       border-radius: 8px;
+      background: #f7f8fb;
       box-shadow: 0 30px 90px rgba(0,0,0,.5);
       transform: translate3d(var(--origin-x, 0px), var(--origin-y, 0px), 0) scale(var(--origin-scale, .9));
       transform-origin: center center;
@@ -520,18 +521,7 @@
       color: rgba(255,255,255,.24);
       font-size: clamp(30px, 5vw, 56px);
       gap: 56px;
-      animation: none;
-      transform: translateX(-12%);
-      will-change: auto;
-    }
-    .lightbox-watermark .scroll-watermark-row:nth-child(2) .scroll-watermark-track {
-      transform: translateX(-34%);
-    }
-    .lightbox-watermark .scroll-watermark-row:nth-child(3) .scroll-watermark-track {
-      transform: translateX(-22%);
-    }
-    .lightbox-watermark .scroll-watermark-row:nth-child(4) .scroll-watermark-track {
-      transform: translateX(-44%);
+      animation-duration: 20s;
     }
     @keyframes watermarkDrift {
       0%   { transform: translateX(0); }
@@ -657,6 +647,20 @@
     @media (hover: none), (pointer: coarse) {
       .section-hint.desktop-copy { display: none; }
       .touch-hint { display: block; }
+      .img-lightbox {
+        background: rgba(18, 22, 30, 0.94);
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+      }
+      .lightbox-frame {
+        transform: translate3d(0, 0, 0) scale(1);
+        transition: box-shadow .22s ease;
+      }
+      .img-lightbox.is-open .lightbox-frame,
+      .img-lightbox.is-closing .lightbox-frame {
+        transform: translate3d(0, 0, 0) scale(1);
+        animation: none;
+      }
     }
     @media (max-width: 640px) {
       .wrap { width: min(100% - 24px, 980px); padding-top: 28px; }
@@ -723,7 +727,7 @@
         <p class="section-hint touch-hint">按住稿件后滑动，松手看当前这张</p>
         <div class="stack-area" oncontextmenu="return false">
           <div class="art-stack">
-            <div class="art-card card" data-art="files/artwork-01.png">
+            <div class="art-card card" data-art="files/artwork-01.png" data-art-width="1791" data-art-height="2133">
               <div class="content">
                 <img src="files/artwork-01.png" alt="稿件 01" draggable="false">
                 <span class="art-overlay"></span>
@@ -756,7 +760,7 @@
                 <span class="watermark">勿盗</span>
               </div>
             </div>
-            <div class="art-card card" data-art="files/artwork-02.png">
+            <div class="art-card card" data-art="files/artwork-02.png" data-art-width="1791" data-art-height="2133">
               <div class="content">
                 <img src="files/artwork-02.png" alt="稿件 02" draggable="false">
                 <span class="art-overlay"></span>
@@ -789,7 +793,7 @@
                 <span class="watermark">勿盗</span>
               </div>
             </div>
-            <div class="art-card card" data-art="files/avatar-preview.jpg">
+            <div class="art-card card" data-art="files/avatar-preview.jpg" data-art-width="640" data-art-height="640">
               <div class="content">
                 <img src="files/avatar-preview.jpg" alt="新稿件" draggable="false">
                 <span class="art-overlay"></span>
@@ -1160,35 +1164,46 @@
       return window.matchMedia('(hover: none), (pointer: coarse)').matches;
     };
 
-    const setLightboxOriginFromCard = (card) => {
-      if (!card) {
+    const parseMediaDimension = (card, key) => {
+      const value = Number(card?.dataset?.[key]);
+      return Number.isFinite(value) && value > 0 ? value : null;
+    };
+
+    const setLightboxOriginFromCard = (card, src = '') => {
+      const mediaWidth = parseMediaDimension(card, 'artWidth');
+      const mediaHeight = parseMediaDimension(card, 'artHeight');
+      const aspectWidth = mediaWidth || (src.includes('avatar-preview') ? 640 : 1791);
+      const aspectHeight = mediaHeight || (src.includes('avatar-preview') ? 640 : 2133);
+      const targetScale = Math.min(
+        window.innerWidth * 0.9 / aspectWidth,
+        window.innerHeight * 0.9 / aspectHeight,
+        1.2
+      );
+      const targetWidth = aspectWidth * targetScale;
+      const targetHeight = aspectHeight * targetScale;
+
+      lightboxFrame.style.width = `${targetWidth}px`;
+      lightboxFrame.style.height = `${targetHeight}px`;
+
+      if (!card || isTouchLikeDevice()) {
         lightboxFrame.style.setProperty('--origin-x', '0px');
         lightboxFrame.style.setProperty('--origin-y', '0px');
-        lightboxFrame.style.setProperty('--origin-scale', '.9');
+        lightboxFrame.style.setProperty('--origin-scale', '1');
         return;
       }
 
       const rect = card.getBoundingClientRect();
-      const targetScale = Math.min(
-        window.innerWidth * 0.9 / rect.width,
-        window.innerHeight * 0.9 / rect.height,
-        2.2
-      );
-      const targetWidth = rect.width * targetScale;
-      const targetHeight = rect.height * targetScale;
       const originX = rect.left + rect.width / 2 - window.innerWidth / 2;
       const originY = rect.top + rect.height / 2 - window.innerHeight / 2;
-      const originScale = Math.max(0.35, Math.min(1, 1 / targetScale));
+      const originScale = Math.max(0.35, Math.min(1, Math.min(rect.width / targetWidth, rect.height / targetHeight)));
 
-      lightboxFrame.style.width = `${targetWidth}px`;
-      lightboxFrame.style.height = `${targetHeight}px`;
       lightboxFrame.style.setProperty('--origin-x', `${originX.toFixed(1)}px`);
       lightboxFrame.style.setProperty('--origin-y', `${originY.toFixed(1)}px`);
       lightboxFrame.style.setProperty('--origin-scale', originScale.toFixed(3));
     };
 
     const openLightbox = (src, sourceCard = null) => {
-      setLightboxOriginFromCard(sourceCard);
+      setLightboxOriginFromCard(sourceCard, src);
       lightboxImg.src = src;
       lightbox.classList.remove('is-closing', 'is-open');
       lightbox.classList.add('is-opening');
