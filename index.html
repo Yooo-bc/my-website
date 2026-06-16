@@ -1199,7 +1199,13 @@
         unlockPageScroll();
       }, 320);
     };
-    lightbox.addEventListener('click', closeLightbox);
+    lightbox.addEventListener('touchend', () => {
+      if (isTouchLikeDevice()) closeLightbox();
+    }, { passive: false });
+    lightbox.addEventListener('click', () => {
+      if (isTouchLikeDevice()) return;
+      closeLightbox();
+    });
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && lightboxOpen) closeLightbox();
     });
