@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
@@ -288,7 +288,6 @@
       height: 500px;
       margin: 0 auto;
       perspective: 1200px;
-      touch-action: none;
     }
 
     .art-card {
@@ -719,7 +718,8 @@
         if (!ev) return;
         pendingMove = null;
 
-        const card = getCardForPoint(ev.clientX);
+        const el = document.elementFromPoint(ev.clientX, ev.clientY);
+        const card = el ? el.closest('.art-card') : null;
 
         if (card !== pulledCard) {
           clearTimeout(leaveTimer);
@@ -752,16 +752,7 @@
       leaveTimer = setTimeout(() => { releaseCard(pulledCard); }, 300);
     });
 
-    // 按左右顺序划分区域，每张卡片等宽
-    const getCardForPoint = (cx) => {
-      const sr = artStack.getBoundingClientRect();
-      const rx = cx - sr.left;
-      const N = artworkCards.length;
-      const idx = Math.min(N - 1, Math.max(0, Math.floor(rx / sr.width * N)));
-      return artworkCards[idx];
-    };
-
-    // —— 触屏支持 ——
+    // —— 触屏支持：与鼠标一致判定，慢滑松手查看 ——
     let touchStart = null, touchMoved = 0, touchCard = null;
 
     artStack.addEventListener('touchstart', (e) => {
@@ -769,23 +760,38 @@
       const t = e.touches[0];
       touchStart = { x: t.clientX, y: t.clientY };
       touchMoved = 0;
-      touchCard = getCardForPoint(t.clientX);
-    }, { passive: true });
+      touchCard = getCardForPoint(t.clientX, t.clientY);
+    }, { passive: false });
 
     artStack.addEventListener('touchmove', (e) => {
       if (!touchStart || lightboxOpen) return;
       const t = e.touches[0];
       touchMoved = Math.hypot(t.clientX - touchStart.x, t.clientY - touchStart.y);
-      if (touchMoved > 25) return;
+      if (touchMoved > 25) return; // 快速滑动不触发卡片
 
-      const card = getCardForPoint(t.clientX);
+      const card = getCardForPoint(t.clientX, t.clientY);
       if (card !== pulledCard) {
         clearTimeout(leaveTimer);
         if (pulledCard) releaseCard(pulledCard, !!card);
         if (card) pullCard(card);
       }
-      if (card && card === pulledCard) applyTilt(card, t.clientX, t.clientY);
-    }, { passive: true });
+      if (card && card === pulledCard) {
+        const rect = card.getBoundingClientRect();
+        const mx = t.clientX - rect.left;
+        const my = t.clientY - rect.top;
+        const cx = rect.width / 2, cy = rect.height / 2;
+        const rY = ((mx - cx) / cx) * TILT_MAX;
+        const rX = ((cy - my) / cy) * TILT_MAX;
+        const fX = card.style.getPropertyValue('--fan-x');
+        const fY = parseFloat(card.style.getPropertyValue('--fan-y'));
+        const fR = card.style.getPropertyValue('--fan-rotate');
+        const fS = card.style.getPropertyValue('--fan-scale');
+        card.style.transform =
+          `translate(${fX}, ${fY - PULL_UP}px)` +
+          ` rotateX(${rX}deg) rotateY(${rY}deg)` +
+          ` rotate(${fR}) scale(${fS})`;
+      }
+    }, { passive: false });
 
     artStack.addEventListener('touchend', () => {
       if (!touchStart || lightboxOpen) { touchStart = null; return; }
