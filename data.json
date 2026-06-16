@@ -1,0 +1,65 @@
+{
+  "avatar": {
+    "image": "files/avatar-preview.jpg",
+    "kicker": "Wolf / High School Student",
+    "title": "驳川",
+    "quote": "别靠太近……算了，朋友的话可以。",
+    "frontHint": "点击卡片查看简介",
+    "backTitle": "关于我",
+    "backDescription": "我是一只狼，也是一个学习不太好的高中生。平时看起来有点冷，不太好接近，还喜欢打架，上课也经常困到睡着；不过熟了之后我其实很热情，对朋友会很认真。虽然我有时候很呆，但看到可爱的东西会忍不住多看几眼。",
+    "backHint": "再点一次返回",
+    "tags": [
+      {
+        "label": "外冷内热",
+        "style": ""
+      },
+      {
+        "label": "喜欢打架",
+        "style": "red"
+      },
+      {
+        "label": "高中生",
+        "style": "blue"
+      }
+    ]
+  },
+  "artworks": [
+    {
+      "id": 1,
+      "title": "稿件 01",
+      "image": "files/artwork-01.png"
+    },
+    {
+      "id": 2,
+      "title": "稿件 02",
+      "image": "files/artwork-02.png"
+    },
+    {
+      "id": 3,
+      "title": "新稿件",
+      "image": "files/avatar-preview.jpg"
+    }
+  ],
+  "contact": {
+    "qq": {
+      "url": "https://qm.qq.com/q/gTjB0YQ9TG",
+      "label": "QQ",
+      "desc": "加我好友"
+    },
+    "bilibili": {
+      "url": "https://b23.tv/XBYwzty",
+      "label": "B站",
+      "desc": "我的空间"
+    }
+  },
+  "texts": {
+    "topNote": "欢迎来到驳川小站~",
+    "spacer1": "",
+    "spacer2": "",
+    "showcaseTitle": "我的稿件",
+    "showcaseDesc": "点击最前的卡片放大查看，点击后面的换到前面",
+    "protectedNote": "不要偷我图片，嗷呜......",
+    "closeHint": "点击空白处关闭",
+    "modalWatermark": "Preview Only"
+  }
+}

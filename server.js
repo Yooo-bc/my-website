@@ -107,20 +107,12 @@ function generateIndexHtml(data) {
   ).join('\n');
 
   const artworkCardsHtml = arts.map((art, i) => {
-    const pos = i === arts.length - 1 ? 'front' : 'back';
-    const isFront = pos === 'front';
-    return `            <button class="art-card" type="button" data-index="${i}" data-stack-position="${pos}" data-art="${escapeHtml(art.image)}" aria-label="${isFront ? '放大查看' : '将稿件 ' + String(i+1).padStart(2,'0') + ' 移到最前'}">
+    return `            <button class="art-card" type="button" data-index="${i}" data-art="${escapeHtml(art.image)}" aria-label="稿件 ${String(i+1).padStart(2,'0')}">
               <img src="${escapeHtml(art.image)}" alt="${escapeHtml(art.title)}" draggable="false">
               <span class="art-overlay"></span>
               <span class="watermark">Preview Only</span>
             </button>`;
   }).join('\n');
-
-  const manuscriptLabel = (i) => String(i + 1).padStart(2, '0');
-  const initArtworkJs = arts.map((art, i) => {
-    const pos = i === arts.length - 1 ? 'front' : 'back';
-    return `            <button class="art-card" type="button" data-index="${i}" data-stack-position="${pos}" data-art="${escapeHtml(art.image)}" aria-label="${pos === 'front' ? `放大查看稿件 ${manuscriptLabel(i)}` : `将稿件 ${manuscriptLabel(i)} 移到最前`}">`;
-  });
 
   return `<!DOCTYPE html>
 <html lang="zh-CN">
@@ -227,6 +219,19 @@ function generateIndexHtml(data) {
     h1 { margin: 12px 0; font-size: clamp(40px, 6vw, 64px); line-height: 1.04; letter-spacing: 0; color: #202833; }
     .quote, .hint { margin: 0; color: #384454; font-size: 17px; line-height: 1.7; }
     .hint { margin-top: 22px; color: #536072; font-size: 14px; }
+    .contact-row { display: flex; gap: 12px; justify-content: center; margin-top: 18px; }
+    .cta-icon {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 14px; border-radius: 999px;
+      background: rgba(255,255,255,.55);
+      border: 1px solid rgba(255,255,255,.7);
+      color: #27303b; text-decoration: none; font-size: 13px;
+      transition: transform .2s ease, background .2s ease, box-shadow .2s ease;
+    }
+    .cta-icon:hover { transform: translateY(-2px); background: rgba(255,255,255,.8); box-shadow: 0 4px 16px rgba(55,109,255,.15); }
+    .cta-icon.qq:hover { box-shadow: 0 4px 16px rgba(18,183,245,.25); }
+    .cta-icon.bili:hover { box-shadow: 0 4px 16px rgba(251,114,153,.25); }
+    .cta-icon span { font-weight: 500; }
     .back .content { max-width: 500px; margin: 0 auto; text-align: left; }
     .back h2, .glass-section h2 { margin: 0 0 18px; font-size: clamp(30px, 5vw, 46px); letter-spacing: 0; color: #202833; }
     .back p, .glass-section p { margin: 0; color: #344051; font-size: clamp(16px, 2vw, 20px); line-height: 1.95; }
@@ -248,7 +253,7 @@ function generateIndexHtml(data) {
     .stack-area {
       position: relative;
       z-index: 2;
-      min-height: 500px;
+      min-height: 580px;
       margin-top: 28px;
       padding-bottom: clamp(72px, 8vw, 112px);
       user-select: none;
@@ -256,8 +261,8 @@ function generateIndexHtml(data) {
     }
     .art-stack {
       position: relative;
-      width: min(420px, 78vw);
-      height: 390px;
+      width: min(480px, 84vw);
+      height: 480px;
       margin: 0 auto;
     }
     .art-card {
@@ -266,61 +271,35 @@ function generateIndexHtml(data) {
       --stack-rotate: 0deg;
       --stack-scale: 1;
       --stack-z: 1;
-      --stack-shadow:
-        0 24px 58px rgba(74,83,96,.24),
-        0 0 30px rgba(55,109,255,.16),
-        0 0 34px rgba(220,32,49,.12),
-        inset 0 1px 0 rgba(255,255,255,.72);
       position: absolute;
       inset: 0;
       overflow: hidden;
       border: 1px solid rgba(255,255,255,.6);
       border-radius: 28px;
-      background: rgba(255,255,255,.42);
-      box-shadow: var(--stack-shadow);
+      background: rgba(255,255,255,.38);
+      box-shadow:
+        0 24px 58px rgba(74,83,96,.2),
+        0 0 30px rgba(55,109,255,.14),
+        0 0 34px rgba(220,32,49,.08),
+        inset 0 1px 0 rgba(255,255,255,.72);
       cursor: pointer;
       transform: translate(var(--stack-x), var(--stack-y)) rotate(var(--stack-rotate)) scale(var(--stack-scale));
       z-index: var(--stack-z);
       transition:
-        transform .92s cubic-bezier(.16, 1, .3, 1),
-        box-shadow .45s ease,
-        filter .45s ease;
+        transform .75s cubic-bezier(.16, 1, .3, 1),
+        box-shadow .4s ease,
+        filter .4s ease;
     }
-    .art-card[data-stack-position="back"] {
-      --stack-x: -34px;
-      --stack-y: 28px;
-      --stack-rotate: -8deg;
-      --stack-scale: .92;
-      --stack-z: 1;
-    }
-    .art-card[data-stack-position="front"] {
-      --stack-x: 38px;
-      --stack-y: -10px;
-      --stack-rotate: 6deg;
-      --stack-scale: .98;
-      --stack-z: 2;
-      cursor: zoom-in;
-    }
-    .art-stack:hover .art-card[data-stack-position="back"] {
-      --stack-x: -68px;
-      --stack-y: 24px;
-      --stack-rotate: -12deg;
-      --stack-scale: .95;
-    }
-    .art-stack:hover .art-card[data-stack-position="front"] {
-      --stack-x: 72px;
-      --stack-y: -22px;
-      --stack-rotate: 10deg;
-      --stack-scale: 1;
-    }
+    .art-card.is-front { cursor: zoom-in; }
     .art-card:hover {
       box-shadow:
         0 30px 70px rgba(74,83,96,.28),
         0 0 44px rgba(55,109,255,.28),
         0 0 48px rgba(220,32,49,.2),
         inset 0 1px 0 rgba(255,255,255,.8);
+      z-index: 20 !important;
+      filter: brightness(1.05);
     }
-    .art-card[data-stack-position="front"]:hover { z-index: 4; }
     .art-card img {
       width: 100%;
       height: 100%;
@@ -434,40 +413,19 @@ function generateIndexHtml(data) {
     .link-card:hover { transform: translateY(-6px); background: rgba(240,242,246,.66); }
     .link-card strong { display: block; margin-bottom: 8px; }
     .link-card span { color: #536072; }
+    .art-stack:hover .art-card { transition: transform .65s cubic-bezier(.16, 1, .3, 1), box-shadow .35s ease, filter .35s ease; }
     @media (max-width: 700px) {
       .contact { grid-template-columns: 1fr; }
-      .stack-area { min-height: 470px; }
-      .art-stack { height: 340px; }
-      .art-card[data-stack-position="back"] {
-        --stack-x: -18px;
-        --stack-y: 28px;
-        --stack-rotate: -7deg;
-        --stack-scale: .9;
-      }
-      .art-card[data-stack-position="front"] {
-        --stack-x: 24px;
-        --stack-y: -8px;
-        --stack-rotate: 6deg;
-        --stack-scale: .96;
-      }
-      .art-stack:hover .art-card[data-stack-position="back"] {
-        --stack-x: -44px;
-        --stack-y: 24px;
-        --stack-rotate: -10deg;
-        --stack-scale: .93;
-      }
-      .art-stack:hover .art-card[data-stack-position="front"] {
-        --stack-x: 52px;
-        --stack-y: -16px;
-        --stack-rotate: 9deg;
-        --stack-scale: .98;
-      }
+      .stack-area { min-height: 500px; }
+      .art-stack { width: min(380px, 88vw); height: 420px; }
     }
     @media (max-width: 640px) {
       .wrap { width: min(100% - 24px, 980px); padding-top: 28px; }
       .flip-card, .flip-inner, .face { min-height: 600px; }
       .face { padding: 30px 22px; }
       .avatar { width: 170px; height: 170px; }
+      .stack-area { min-height: 460px; }
+      .art-stack { width: min(320px, 90vw); height: 370px; }
     }
     @media (prefers-reduced-motion: reduce) {
       .flip-inner, .glass-section, .contact, .link-card, .art-card, .modal, .modal-card { transition: none; }
@@ -490,6 +448,16 @@ function generateIndexHtml(data) {
               <h1>${escapeHtml(a.title)}</h1>
               <p class="quote">"${escapeHtml(a.quote)}"</p>
               <p class="hint">${escapeHtml(a.frontHint)}</p>
+              <div class="contact-row">
+                <a class="cta-icon qq" href="${escapeHtml(c.qq.url)}" target="_blank" rel="noreferrer" title="${escapeHtml(c.qq.desc)}">
+                  <svg viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="11" fill="#12B7F5"/><text x="12" y="16" text-anchor="middle" fill="white" font-size="9" font-weight="bold" font-family="system-ui,sans-serif">QQ</text></svg>
+                  <span>${escapeHtml(c.qq.label)}</span>
+                </a>
+                <a class="cta-icon bili" href="${escapeHtml(c.bilibili.url)}" target="_blank" rel="noreferrer" title="${escapeHtml(c.bilibili.desc)}">
+                  <svg viewBox="0 0 24 24" width="18" height="18"><rect x="2" y="7" width="20" height="13" rx="3" fill="#FB7299"/><line x1="7" y1="7" x2="5" y2="2" stroke="#FB7299" stroke-width="2" stroke-linecap="round"/><line x1="17" y1="7" x2="19" y2="2" stroke="#FB7299" stroke-width="2" stroke-linecap="round"/><text x="12" y="17" text-anchor="middle" fill="white" font-size="7" font-weight="bold" font-family="system-ui,sans-serif">B站</text></svg>
+                  <span>${escapeHtml(c.bilibili.label)}</span>
+                </a>
+              </div>
             </div>
           </div>
           <div class="face back">
@@ -518,17 +486,6 @@ ${artworkCardsHtml}
           <p class="protected-note">${escapeHtml(t.protectedNote)}</p>
         </div>
       </div>
-    </section>
-    <div class="spacer">${escapeHtml(t.spacer2)}</div>
-    <section class="contact reveal">
-      <a class="link-card" href="${escapeHtml(c.qq.url)}" target="_blank" rel="noreferrer">
-        <strong>${escapeHtml(c.qq.label)}</strong>
-        <span>${escapeHtml(c.qq.desc)}</span>
-      </a>
-      <a class="link-card" href="${escapeHtml(c.bilibili.url)}" target="_blank" rel="noreferrer">
-        <strong>${escapeHtml(c.bilibili.label)}</strong>
-        <span>${escapeHtml(c.bilibili.desc)}</span>
-      </a>
     </section>
   </main>
   <div class="modal" id="artModal" aria-hidden="true" oncontextmenu="return false">
@@ -574,46 +531,80 @@ ${artworkCardsHtml}
       }, 420);
     };
 
-    const artworkCards = Array.from(document.querySelectorAll('.art-card'));
-    let frontIndex = artworkCards.findIndex((card) => card.dataset.stackPosition === 'front');
-    if (frontIndex < 0) frontIndex = artworkCards.length - 1;
+    const artStack = document.querySelector('.art-stack');
+    let artworkCards = [];
 
-    const manuscriptLabel = (index) => String(index + 1).padStart(2, '0');
-    const renderStack = () => {
-      artworkCards.forEach((card, index) => {
-        const isFront = index === frontIndex;
-        card.dataset.stackPosition = isFront ? 'front' : 'back';
-        card.setAttribute(
-          'aria-label',
-          isFront ? \`放大查看稿件 \${manuscriptLabel(index)}\` : \`将稿件 \${manuscriptLabel(index)} 移到最前\`
-        );
+    const collectCards = () => {
+      artworkCards = Array.from(artStack.querySelectorAll('.art-card'));
+    };
+    collectCards();
+
+    const computeStackParams = (position, total, hover) => {
+      const frontIdx = total - 1;
+      const dist = frontIdx - position;
+      const ratio = total > 1 ? dist / (total - 1) : 0;
+
+      if (hover) {
+        const x = 6 + ratio * (-72);
+        const y = -4 + ratio * 32;
+        const rot = 2.5 + ratio * (-14);
+        const scl = 1 - ratio * 0.1;
+        return { x, y, rot, scl };
+      }
+      const x = 2 + ratio * (-22);
+      const y = -2 + ratio * 10;
+      const rot = 1.5 + ratio * (-8);
+      const scl = 1 - ratio * 0.08;
+      return { x, y, rot, scl };
+    };
+
+    const applyStackParams = (hover) => {
+      const total = artworkCards.length;
+      artworkCards.forEach((card, i) => {
+        const p = computeStackParams(i, total, hover);
+        card.style.setProperty('--stack-x', p.x + 'px');
+        card.style.setProperty('--stack-y', p.y + 'px');
+        card.style.setProperty('--stack-rotate', p.rot + 'deg');
+        card.style.setProperty('--stack-scale', String(p.scl));
+        card.style.setProperty('--stack-z', String(i + 1));
+        const isFront = i === total - 1;
+        card.classList.toggle('is-front', isFront);
+        card.setAttribute('aria-label', isFront ? '放大查看稿件 ' + String(i + 1).padStart(2, '0') : '将稿件 ' + String(i + 1).padStart(2, '0') + ' 移到最前');
       });
     };
 
     const bringToFront = (card) => {
-      const nextIndex = artworkCards.indexOf(card);
-      if (nextIndex === -1 || nextIndex === frontIndex) return;
-      frontIndex = nextIndex;
-      renderStack();
+      const total = artworkCards.length;
+      const idx = artworkCards.indexOf(card);
+      if (idx === -1 || idx === total - 1) return;
+      artStack.appendChild(card);
+      collectCards();
+      applyStackParams(false);
     };
 
-    renderStack();
+    applyStackParams(false);
 
-    artworkCards.forEach((card) => {
-      card.addEventListener('click', () => {
-        if (artworkCards.indexOf(card) === frontIndex) {
-          openModal(card.dataset.art);
-          return;
-        }
-        bringToFront(card);
-      });
-      card.addEventListener('contextmenu', (event) => event.preventDefault());
-      card.addEventListener('dragstart', (event) => event.preventDefault());
+    artStack.addEventListener('mouseenter', () => applyStackParams(true));
+    artStack.addEventListener('mouseleave', () => applyStackParams(false));
+
+    artStack.addEventListener('click', (e) => {
+      const card = e.target.closest('.art-card');
+      if (!card) return;
+      const total = artworkCards.length;
+      const idx = artworkCards.indexOf(card);
+      if (idx === total - 1) {
+        openModal(card.dataset.art);
+        return;
+      }
+      bringToFront(card);
     });
+
+    artStack.addEventListener('contextmenu', (event) => event.preventDefault());
     document.querySelectorAll('#showcase, #showcase *, #artModal, #artModal *').forEach((el) => {
       el.addEventListener('contextmenu', (event) => event.preventDefault());
       el.addEventListener('dragstart', (event) => event.preventDefault());
     });
+
     modal.addEventListener('click', closeModal);
     document.addEventListener('keydown', (event) => {
       if (event.key === 'Escape' && modal.classList.contains('is-open')) closeModal();
@@ -695,6 +686,10 @@ const server = http.createServer((req, res) => {
         fs.writeFileSync(path.join(ROOT, 'index.html'), html, 'utf-8');
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ ok: true }));
+        exec('cd "' + ROOT + '" && git add . && git commit -m "Update site" && git push', (err, stdout, stderr) => {
+          if (err) console.error('[git push]', err.message);
+          else console.log('[git push] OK');
+        });
       } catch (err) {
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ ok: false, error: err.message }));
