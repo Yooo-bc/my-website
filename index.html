@@ -789,18 +789,16 @@
       leaveTimer = setTimeout(() => { releaseCard(pulledCard); }, 300);
     });
 
-    // —— 移动端触屏：长按进入独立预览，按住滑动可切换稿件 ——
+    // —— 移动端触屏：长按进入独立预览，按舞台坐标稳定切换稿件 ——
     const LONG_PRESS_MS = 360;
-    const PREVIEW_SWITCH_DISTANCE = 40;
-    const SWITCH_COOLDOWN_MS = 220;
+    const TOUCH_SWITCH_HYSTERESIS = 0.16;
     const SCROLL_CANCEL_MOVE = 28;
     let touchStart = null;
     let touchMoved = 0;
     let touchCard = null;
     let touchPreviewActive = false;
     let longPressTimer = null;
-    let touchSwitchCooldownUntil = 0;
-    let touchAnchor = null;
+    let suppressNextStackClick = false;
 
     const clearLongPressTimer = () => {
       if (!longPressTimer) return;
@@ -808,11 +806,33 @@
       longPressTimer = null;
     };
 
+    const getTouchCardForPoint = (clientX) => {
+      const count = artworkCards.length;
+      if (!count) return null;
+
+      const rect = artStack.getBoundingClientRect();
+      const progress = Math.min(Math.max((clientX - rect.left) / rect.width, 0), 0.999);
+      const rawIndex = Math.floor(progress * count);
+
+      if (!touchCard) return artworkCards[rawIndex] || null;
+
+      const currentIndex = artworkCards.indexOf(touchCard);
+      if (currentIndex < 0) return artworkCards[rawIndex] || null;
+
+      const zoneStart = currentIndex / count;
+      const zoneEnd = (currentIndex + 1) / count;
+      const boundaryInset = TOUCH_SWITCH_HYSTERESIS / count;
+      const canMoveLeft = currentIndex > 0 && progress < zoneStart - boundaryInset;
+      const canMoveRight = currentIndex < count - 1 && progress > zoneEnd + boundaryInset;
+
+      if (!canMoveLeft && !canMoveRight) return touchCard;
+      return artworkCards[rawIndex] || touchCard;
+    };
+
     const activateTouchPreview = (card, clientX, clientY) => {
       if (!card || lightboxOpen) return;
       touchPreviewActive = true;
       touchCard = card;
-      touchAnchor = { x: clientX, y: clientY };
       artStack.classList.add('is-touch-preview');
       if (card !== pulledCard) {
         clearTimeout(leaveTimer);
@@ -824,18 +844,8 @@
 
     const updateTouchPreviewTarget = (clientX, clientY) => {
       if (!touchPreviewActive || lightboxOpen) return;
-      const now = Date.now();
-      if (now < touchSwitchCooldownUntil) return;
-      const card = getCardForPoint(clientX, clientY);
+      const card = getTouchCardForPoint(clientX);
       if (!card || card === touchCard) {
-        if (touchCard) tiltCardAtPoint(touchCard, clientX, clientY);
-        return;
-      }
-
-      const movedFromAnchor = touchAnchor
-        ? Math.hypot(clientX - touchAnchor.x, clientY - touchAnchor.y)
-        : PREVIEW_SWITCH_DISTANCE;
-      if (movedFromAnchor < PREVIEW_SWITCH_DISTANCE) {
         if (touchCard) tiltCardAtPoint(touchCard, clientX, clientY);
         return;
       }
@@ -845,8 +855,6 @@
       pullCard(card);
       tiltCardAtPoint(card, clientX, clientY);
       touchCard = card;
-      touchAnchor = { x: clientX, y: clientY };
-      touchSwitchCooldownUntil = now + SWITCH_COOLDOWN_MS;
     };
 
     const resetTouchPreview = (release = true) => {
@@ -857,7 +865,6 @@
       touchStart = null;
       touchMoved = 0;
       touchCard = null;
-      touchAnchor = null;
     };
 
     artStack.addEventListener('touchstart', (e) => {
@@ -866,9 +873,8 @@
       touchStart = { x: t.clientX, y: t.clientY };
       touchMoved = 0;
       touchPreviewActive = false;
-      touchCard = getCardForPoint(t.clientX, t.clientY);
-      touchSwitchCooldownUntil = 0;
-      touchAnchor = null;
+      touchCard = getTouchCardForPoint(t.clientX);
+      suppressNextStackClick = true;
       clearLongPressTimer();
       longPressTimer = setTimeout(() => {
         activateTouchPreview(touchCard, t.clientX, t.clientY);
@@ -925,6 +931,10 @@
     });
 
     artStack.addEventListener('click', (e) => {
+      if (suppressNextStackClick) {
+        suppressNextStackClick = false;
+        return;
+      }
       const card = e.target.closest('.art-card');
       if (!card || lightboxOpen) return;
       card.classList.add('is-tapped');
