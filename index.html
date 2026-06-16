@@ -1082,7 +1082,7 @@
       longPressTimer = setTimeout(() => {
         activateTouchPreview(touchCard, t.clientX, t.clientY);
       }, LONG_PRESS_MS);
-    }, { passive: false });
+    }, { passive: true });
 
     touchTarget.addEventListener('touchmove', (e) => {
       if (!touchStart || lightboxOpen) return;
