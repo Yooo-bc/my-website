@@ -520,7 +520,18 @@
       color: rgba(255,255,255,.24);
       font-size: clamp(30px, 5vw, 56px);
       gap: 56px;
-      animation-duration: 20s;
+      animation: none;
+      transform: translateX(-12%);
+      will-change: auto;
+    }
+    .lightbox-watermark .scroll-watermark-row:nth-child(2) .scroll-watermark-track {
+      transform: translateX(-34%);
+    }
+    .lightbox-watermark .scroll-watermark-row:nth-child(3) .scroll-watermark-track {
+      transform: translateX(-22%);
+    }
+    .lightbox-watermark .scroll-watermark-row:nth-child(4) .scroll-watermark-track {
+      transform: translateX(-44%);
     }
     @keyframes watermarkDrift {
       0%   { transform: translateX(0); }
