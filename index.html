@@ -1209,7 +1209,8 @@
 
         const draw = () => {
           if (lightboxCanvasCtx !== ctx) return;
-          ctx.clearRect(0, 0, w, h);
+          ctx.fillStyle = '#181c22';
+          ctx.fillRect(0, 0, w, h);
 
           // 原图
           if (img.complete && img.naturalWidth > 0) {
