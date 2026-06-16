@@ -848,6 +848,9 @@
       }, 520);
     };
     flipCard.addEventListener('click', toggleFlip);
+    document.querySelectorAll('.flip-card .cta-icon').forEach((link) => {
+      link.addEventListener('click', (e) => { e.stopPropagation(); });
+    });
     flipCard.addEventListener('keydown', (event) => {
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
@@ -1041,6 +1044,7 @@
         pullCard(card);
       }
       tiltTouchCardAtPoint(card, clientX, clientY);
+      lockPageScroll();
     };
 
     const updateTouchPreviewTarget = (clientX, clientY) => {
@@ -1066,6 +1070,7 @@
       touchStart = null;
       touchMoved = 0;
       touchCard = null;
+      if (!lightboxOpen) unlockPageScroll();
     };
 
     const touchTarget = showcaseTouchArea || artStack;
