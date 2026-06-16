@@ -653,15 +653,12 @@
       }
       .lightbox-frame {
         transform: none;
-        transition: opacity .22s ease, box-shadow .22s ease;
+        transition: none;
       }
       .img-lightbox.is-open .lightbox-frame,
       .img-lightbox.is-closing .lightbox-frame {
         transform: none;
         animation: none;
-      }
-      .img-lightbox.is-opening .lightbox-frame {
-        opacity: .999;
       }
     }
     @media (max-width: 640px) {
@@ -1152,9 +1149,9 @@
       const aspectWidth = mediaWidth || (src.includes('avatar-preview') ? 640 : 1791);
       const aspectHeight = mediaHeight || (src.includes('avatar-preview') ? 640 : 2133);
       const targetScale = Math.min(
-        window.innerWidth * 0.9 / aspectWidth,
-        window.innerHeight * 0.9 / aspectHeight,
-        1.2
+        window.innerWidth * 0.95 / aspectWidth,
+        window.innerHeight * 0.95 / aspectHeight,
+        DPR
       );
       const targetWidth = aspectWidth * targetScale;
       const targetHeight = aspectHeight * targetScale;
@@ -1212,6 +1209,8 @@
         }
         const ctx = canvas.getContext('2d', { alpha: false });
         ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
         lightboxCanvasEl = canvas;
         lightboxCanvasCtx = ctx;
         watermarkPhase = 0;
