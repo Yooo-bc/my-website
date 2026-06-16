@@ -648,6 +648,7 @@
       .section-hint.desktop-copy { display: none; }
       .touch-hint { display: block; }
       .img-lightbox {
+        padding: 12px;
         background: rgba(18, 22, 30, 0.98);
         backdrop-filter: none;
         -webkit-backdrop-filter: none;
@@ -1145,9 +1146,12 @@
       const mediaHeight = parseMediaDimension(card, 'artHeight');
       const aspectWidth = mediaWidth || (src.includes('avatar-preview') ? 640 : 1791);
       const aspectHeight = mediaHeight || (src.includes('avatar-preview') ? 640 : 2133);
+      const pad = isTouchLikeDevice() ? 24 : 48; // 灯箱 padding 上下/左右各 12/24px
+      const availW = window.innerWidth - pad;
+      const availH = window.innerHeight - pad;
       const targetScale = Math.min(
-        window.innerWidth * 0.95 / aspectWidth,
-        window.innerHeight * 0.95 / aspectHeight,
+        availW * 0.95 / aspectWidth,
+        availH * 0.95 / aspectHeight,
         DPR
       );
       const targetWidth = aspectWidth * targetScale;
