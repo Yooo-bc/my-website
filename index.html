@@ -1182,6 +1182,7 @@
     };
 
     // —— 灯箱 Canvas 水印合成（单层渲染，避免图片+水印 GPU 分层闪烁） ——
+    const DPR = Math.min(window.devicePixelRatio || 1, 2);
     let lightboxCanvasEl = null;
     let lightboxCanvasCtx = null;
     let watermarkRafId = null;
@@ -1201,9 +1202,16 @@
         const h = frame.offsetHeight;
         if (w <= 0 || h <= 0) return;
 
-        canvas.width = w;
-        canvas.height = h;
+        const newBufW = w * DPR;
+        const newBufH = h * DPR;
+        if (canvas.width !== newBufW || canvas.height !== newBufH) {
+          canvas.width = newBufW;
+          canvas.height = newBufH;
+          canvas.style.width = w + 'px';
+          canvas.style.height = h + 'px';
+        }
         const ctx = canvas.getContext('2d', { alpha: false });
+        ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
         lightboxCanvasEl = canvas;
         lightboxCanvasCtx = ctx;
         watermarkPhase = 0;
@@ -1289,15 +1297,22 @@
       setLightboxOriginFromCard(sourceCard, src);
       lightboxImg.src = src;
 
-      // 先同步铺好 canvas 底色，再让灯箱可见，避免 GPU 合成时 canvas 空白
+      // 同步铺好 canvas 底色，getImageData 强制提交缓冲区
+      // DPR 缩放保证高清屏不糊
       const canvas = document.getElementById('lightboxCanvas');
       const frame = document.querySelector('.lightbox-frame');
       if (canvas && frame && frame.offsetWidth > 0) {
-        canvas.width = frame.offsetWidth;
-        canvas.height = frame.offsetHeight;
+        const w = frame.offsetWidth;
+        const h = frame.offsetHeight;
+        canvas.width = w * DPR;
+        canvas.height = h * DPR;
+        canvas.style.width = w + 'px';
+        canvas.style.height = h + 'px';
         const ctx = canvas.getContext('2d', { alpha: false });
+        ctx.scale(DPR, DPR);
         ctx.fillStyle = '#181c22';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillRect(0, 0, w, h);
+        ctx.getImageData(0, 0, 1, 1);
       }
 
       lightbox.classList.remove('is-closing', 'is-open');
