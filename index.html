@@ -1217,56 +1217,54 @@
         lightboxCanvasCtx = ctx;
         watermarkPhase = 0;
 
+        // 预计算所有不变量，draw() 里不再重复算
+        const fontSize = Math.round(Math.min(Math.max(30, Math.min(w, h) * 0.068), 56));
+        ctx.font = '750 ' + fontSize + 'px "Noto Serif CJK SC", "Source Han Serif SC", "Songti SC", "STSong", "Noto Serif SC", "SimSun", serif';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+
+        const charW = ctx.measureText('驳').width;
+        const spacing = fontSize * 0.2;
+        const chipW = charW * 2 + spacing;
+        const gap = fontSize * 2.4;
+        const step = chipW + gap;
+        const diagonal = Math.sqrt(w * w + h * h) * 2.2;
+        const cols = Math.ceil(diagonal / step) + 6;
+        const rows = 6;
+        const ys = Array.from({ length: rows }, (_, row) => (row - (rows - 1) / 2) * fontSize * 3.8);
+
+        // 图片缩放参数（图片尺寸不变，只算一次）
+        const imgScale = img.complete && img.naturalWidth > 0
+          ? Math.min(w / img.naturalWidth, h / img.naturalHeight) : 0;
+        const iw = imgScale ? img.naturalWidth * imgScale : 0;
+        const ih = imgScale ? img.naturalHeight * imgScale : 0;
+        const ix = (w - iw) / 2;
+        const iy = (h - ih) / 2;
+
         const draw = () => {
           if (lightboxCanvasCtx !== ctx) return;
+
+          // 底色 + 原图
           ctx.fillStyle = '#181c22';
           ctx.fillRect(0, 0, w, h);
-
-          // 原图
-          if (img.complete && img.naturalWidth > 0) {
-            const s = Math.min(w / img.naturalWidth, h / img.naturalHeight);
-            const iw = img.naturalWidth * s;
-            const ih = img.naturalHeight * s;
-            ctx.drawImage(img, (w - iw) / 2, (h - ih) / 2, iw, ih);
-          }
+          if (imgScale) ctx.drawImage(img, ix, iy, iw, ih);
 
           // 滚动水印
           ctx.save();
-          const angle = -16 * Math.PI / 180;
           ctx.translate(w / 2, h / 2);
-          ctx.rotate(angle);
-
-          const fontSize = Math.round(Math.min(Math.max(30, Math.min(w, h) * 0.068), 56));
-          ctx.font = '750 ' + fontSize + 'px "Noto Serif CJK SC", "Source Han Serif SC", "Songti SC", "STSong", "Noto Serif SC", "SimSun", serif';
-          ctx.textAlign = 'left';
-          ctx.textBaseline = 'middle';
-
-          const charW = ctx.measureText('驳').width;
-          const spacing = fontSize * 0.2;
-          const chipW = charW * 2 + spacing;
-          const gap = fontSize * 2.4;
-          const step = chipW + gap;
-          const diagonal = Math.sqrt(w * w + h * h) * 2.2;
-          const cols = Math.ceil(diagonal / step) + 6;
-          const rows = 6;
+          ctx.rotate(-16 * Math.PI / 180);
+          ctx.fillStyle = 'rgba(255,255,255,.30)';
+          ctx.shadowColor = 'rgba(0,0,0,.42)';
+          ctx.shadowBlur = 2.5;
+          ctx.shadowOffsetX = 1;
+          ctx.shadowOffsetY = 1;
 
           watermarkPhase = (watermarkPhase + 1.1) % step;
 
           for (let row = 0; row < rows; row++) {
-            const y = (row - (rows - 1) / 2) * fontSize * 3.8;
+            const y = ys[row];
             for (let col = -5; col < cols; col++) {
-              let cx = col * step + watermarkPhase;
-              // 高光层：左上浅色，无阴影
-              ctx.shadowColor = 'transparent';
-              ctx.fillStyle = 'rgba(255,255,255,.10)';
-              ctx.fillText('驳', cx - .6, y - .6);
-              ctx.fillText('川', cx + charW + spacing - .6, y - .6);
-              // 主体层：右下深阴影
-              ctx.shadowColor = 'rgba(0,0,0,.42)';
-              ctx.shadowBlur = 2.5;
-              ctx.shadowOffsetX = 1;
-              ctx.shadowOffsetY = 1;
-              ctx.fillStyle = 'rgba(255,255,255,.30)';
+              const cx = col * step + watermarkPhase;
               ctx.fillText('驳', cx, y);
               ctx.fillText('川', cx + charW + spacing, y);
             }
