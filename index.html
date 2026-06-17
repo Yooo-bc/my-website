@@ -316,14 +316,9 @@
       z-index: var(--stack-z);
       /* will-change 仅交互时由 JS 动态添加，避免闲置时占用 GPU 层 */
       contain: layout style;
-      opacity: 0;
       transition:
         transform .45s ease-out,
-        opacity .8s ease,
         box-shadow .4s ease;
-    }
-    .glass-section.is-visible .art-card {
-      opacity: 1;
     }
     .art-card::after {
       content: '';
@@ -658,7 +653,6 @@
     @media (prefers-reduced-motion: reduce) {
       .flip-inner, .glass-section, .contact, .link-card, .art-card, .modal, .modal-card { transition: none; }
       .glass-section, .contact { transform: none; opacity: 1; }
-      .glass-section .art-card { opacity: 1; }
       .flip-card.sweep-on .sweep { animation: none; }
     }
   </style>
