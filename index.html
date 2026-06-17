@@ -267,7 +267,7 @@
       padding: clamp(28px, 5vw, 48px);
       transform: translateY(80px) scale(.96);
       opacity: 0;
-      transition: transform .7s cubic-bezier(.16,1,.3,1), opacity .7s cubic-bezier(.16,1,.3,1);
+      transition: transform .55s ease-out, opacity .55s ease-out;
       will-change: transform, opacity;
     }
     .glass-section.is-visible, .contact.is-visible {
@@ -280,9 +280,9 @@
     .stack-area {
       position: relative;
       z-index: 2;
-      min-height: 580px;
+      min-height: 500px;
       margin-top: 28px;
-      padding-bottom: clamp(72px, 8vw, 112px);
+      padding-bottom: clamp(64px, 7vw, 96px);
       user-select: none;
       -webkit-user-select: none;
     }
@@ -296,8 +296,8 @@
     }
     .art-stack {
       position: relative;
-      width: min(370px, 78vw);
-      height: 500px;
+      width: min(330px, 75vw);
+      height: 440px;
       margin: 0 auto;
       perspective: 1200px;
     }
@@ -313,9 +313,9 @@
       overflow: hidden;
       border: 1px solid rgba(255,255,255,.6);
       border-radius: 28px;
-      background: rgba(255,255,255,.38);
-      backdrop-filter: blur(24px) saturate(120%);
-      -webkit-backdrop-filter: blur(24px) saturate(120%);
+      /* 去掉 backdrop-filter blur：这是滚动卡顿的主因。
+         改为更不透明白底，配合 ::after 内阴影保持玻璃感 */
+      background: rgba(255,255,255,.68);
       box-shadow:
         0 8px 40px rgba(31,38,135,.18),
         inset 0 2px 16px rgba(255,255,255,.35);
@@ -323,18 +323,14 @@
       transform: translate(var(--fan-x), var(--fan-y)) rotate(var(--fan-rotate)) scale(var(--fan-scale));
       transform-origin: bottom center;
       z-index: var(--stack-z);
-      will-change: transform;
-      contain: layout style paint;
+      /* will-change 仅交互时由 JS 动态添加，避免闲置时占用 GPU 层 */
+      contain: layout style;
       opacity: 0;
       transition:
-        transform .55s cubic-bezier(.16, 1, .3, 1),
-        opacity .55s cubic-bezier(.16, 1, .3, 1),
+        transform .45s ease-out,
+        opacity .8s ease,
         box-shadow .4s ease;
     }
-    /* 卡片逐个 staggered 出现 */
-    .art-card:nth-child(1) { transition-delay: 0s, .08s, 0s; }
-    .art-card:nth-child(2) { transition-delay: 0s, .22s, 0s; }
-    .art-card:nth-child(3) { transition-delay: 0s, .36s, 0s; }
     .glass-section.is-visible .art-card {
       opacity: 1;
     }
@@ -638,7 +634,7 @@
       pointer-events: none;
     }
     .modal.is-open + .close-hint { opacity: .9; }
-    .contact { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; transform: translateY(130px) scale(.95); opacity: 0; transition: transform 1s cubic-bezier(.16,1,.3,1), opacity 1s cubic-bezier(.16,1,.3,1); }
+    .contact { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; transform: translateY(80px) scale(.96); opacity: 0; transition: transform .7s ease-out, opacity .7s ease-out; }
     .link-card { color: #27303b; text-decoration: none; padding: 24px; border-radius: 22px; transition: transform .35s cubic-bezier(.16,1,.3,1), background .22s ease; }
     .link-card:hover { transform: translateY(-6px); background: rgba(240,242,246,.66); }
     .link-card strong { display: block; margin-bottom: 6px; font-size: 17px; font-weight: 650; letter-spacing: -.01em; }
@@ -667,8 +663,8 @@
       .flip-card, .flip-inner, .face { min-height: 460px; }
       .face { padding: 30px 22px; }
       .avatar { width: 140px; height: 140px; }
-      .stack-area { min-height: 440px; }
-      .art-stack { width: min(260px, 80vw); height: 360px; }
+      .stack-area { min-height: 380px; }
+      .art-stack { width: min(240px, 78vw); height: 320px; }
     }
     @media (prefers-reduced-motion: reduce) {
       .flip-inner, .glass-section, .contact, .link-card, .art-card, .modal, .modal-card { transition: none; }
@@ -913,6 +909,7 @@
     let leaveTimer  = null;
 
     const pullCard = (card) => {
+      card.style.willChange = 'transform';
       card.style.transition = 'transform .1s ease-out, box-shadow .35s ease, filter .35s ease';
       card.style.setProperty('--stack-z', '80');
       card.classList.add('is-pulled');
@@ -920,6 +917,7 @@
     };
 
     const releaseCard = (card, fast = false) => {
+      card.style.willChange = 'auto';
       card.style.transition = fast
         ? 'transform .25s cubic-bezier(.16, 1, .3, 1), box-shadow .25s ease, filter .25s ease'
         : 'transform .5s cubic-bezier(.16, 1, .3, 1), box-shadow .4s ease, filter .4s ease';
