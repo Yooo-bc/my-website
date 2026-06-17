@@ -1256,8 +1256,11 @@
         const draw = () => {
           if (lightboxCanvasCtx !== ctx) return;
 
-          /* 从离屏 canvas 直接 blit 静态层（GPU 加速，极快） */
-          ctx.drawImage(offscreen, 0, 0);
+          /* 从离屏 canvas 直接 blit 静态层（GPU 加速，极快）
+             显式指定目标宽高 w×h（逻辑像素），配合 DPR 变换后
+             恰好填满 canvas 物理像素，避免因离屏 canvas 自然尺寸
+             在 DPR>1 时被二次放大导致只显示左上角 */
+          ctx.drawImage(offscreen, 0, 0, w, h);
 
           /* 滚动水印 */
           ctx.save();
