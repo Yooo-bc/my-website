@@ -61,10 +61,6 @@
       100% { transform: rotate(-22deg) translateX(-25%); }
     }
     .bg-pinyin-slow { animation-name: pinyinScrollSlow; }
-    .bg-pinyin.is-paused,
-    .bg-pinyin-slow.is-paused {
-      animation-play-state: paused;
-    }
     @keyframes pinyinScrollSlow {
       0%   { transform: rotate(-22deg) translateX(-15%); }
       100% { transform: rotate(-22deg) translateX(10%); }
@@ -1408,11 +1404,11 @@
     let scrollPauseTimer = null;
     window.addEventListener('scroll', () => {
       if (!scrollPauseTimer) {
-        pinyinLayers.forEach((el) => el.classList.add('is-paused'));
+        pinyinLayers.forEach((el) => { el.style.animationPlayState = 'paused'; });
       }
       clearTimeout(scrollPauseTimer);
       scrollPauseTimer = setTimeout(() => {
-        pinyinLayers.forEach((el) => el.classList.remove('is-paused'));
+        pinyinLayers.forEach((el) => { el.style.animationPlayState = ''; });
         scrollPauseTimer = null;
       }, 200);
     }, { passive: true });
