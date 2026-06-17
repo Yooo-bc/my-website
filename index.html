@@ -256,17 +256,6 @@
       padding: clamp(28px, 5vw, 48px);
       content-visibility: auto;
       contain-intrinsic-size: auto 700px;
-      transform: translateY(80px) scale(.96);
-      opacity: 0;
-      transition: transform .55s ease-out, opacity .55s ease-out;
-      will-change: transform, opacity;
-    }
-    .glass-section.is-visible, .contact.is-visible {
-      transform: translateY(0) scale(1);
-      opacity: 1;
-    }
-    .glass-section.is-visible {
-      will-change: auto;
     }
     .stack-area {
       position: relative;
@@ -618,7 +607,7 @@
       pointer-events: none;
     }
     .modal.is-open + .close-hint { opacity: .9; }
-    .contact { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; transform: translateY(80px) scale(.96); opacity: 0; transition: transform .7s ease-out, opacity .7s ease-out; }
+    .contact { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
     .link-card { color: #27303b; text-decoration: none; padding: 24px; border-radius: 22px; transition: transform .35s ease-out, background .22s ease; }
     .link-card:hover { transform: translateY(-6px); background: rgba(240,242,246,.66); }
     .link-card strong { display: block; margin-bottom: 6px; font-size: 17px; font-weight: 650; letter-spacing: -.01em; }
@@ -651,8 +640,7 @@
       .art-stack { width: min(240px, 78vw); height: 320px; }
     }
     @media (prefers-reduced-motion: reduce) {
-      .flip-inner, .glass-section, .contact, .link-card, .art-card, .modal, .modal-card { transition: none; }
-      .glass-section, .contact { transform: none; opacity: 1; }
+      .flip-inner, .link-card, .art-card, .modal, .modal-card { transition: none; }
       .flip-card.sweep-on .sweep { animation: none; }
     }
   </style>
@@ -700,7 +688,7 @@
       </div>
     </section>
     <div class="spacer"></div>
-    <section class="glass-section reveal" id="showcase">
+    <section class="glass-section" id="showcase">
       <div class="content" style="text-align:left">
         <h2>狼的照片</h2>
         <p class="section-hint desktop-copy">摸摸看，点开能放大</p>
@@ -883,7 +871,6 @@
       });
     };
     computeFanLayout();
-    /* 卡片由 IntersectionObserver 在滚动进入时 staggered 淡入 */
 
     /* 悬停 */
     const TILT_MAX = 20;
@@ -1385,13 +1372,7 @@
       el.addEventListener('dragstart', (e) => e.preventDefault());
     });
 
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) entry.target.classList.add('is-visible');
-        else entry.target.classList.remove('is-visible');
-      });
-    }, { threshold: 0.25 });
-    document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
+
 
     /* ====== 背景拼音：滚动时暂停动画省 GPU ====== */
     const pinyinLayers = document.querySelectorAll('.bg-pinyin, .bg-pinyin-slow');
