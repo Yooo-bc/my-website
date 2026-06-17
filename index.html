@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
@@ -82,7 +82,6 @@
       padding: 44px 0 120px;
       contain: layout style;
     }
-    /* 顶部欢迎语 */
     .note {
       margin: 0 0 22px;
       color: #3d4654;
@@ -156,7 +155,6 @@
     }
     .avatar img { width: 100%; height: 100%; display: block; object-fit: cover; border-radius: 50%; }
 
-    /* 标签文字 */
     .kicker {
       font-family: var(--font-label);
       color: #355da8;
@@ -165,7 +163,6 @@
       letter-spacing: .28em;
       text-transform: uppercase;
     }
-    /* 主标题 */
     h1 {
       font-family: var(--font-heading);
       margin: 10px 0 16px;
@@ -175,7 +172,6 @@
       letter-spacing: -.01em;
       color: #202833;
     }
-    /* 引语 */
     .quote {
       margin: 0;
       color: #384454;
@@ -183,7 +179,6 @@
       font-style: italic;
       line-height: 1.7;
     }
-    /* 提示文字 —— 2s 一跳，蓝色 */
     @keyframes hintBounce {
       0%, 100% { transform: translateY(0); }
       15%      { transform: translateY(-4px); }
@@ -223,7 +218,6 @@
     .cta-icon.bili:hover { box-shadow: 0 4px 16px rgba(251,114,153,.25); }
     .cta-icon span { font-weight: 600; }
     .back .content { max-width: 400px; margin: 0; text-align: left; justify-self: start; padding-left: 8px; }
-    /* 二级标题 */
     .back h2, .glass-section h2 {
       font-family: var(--font-body);
       margin: 0 0 18px;
@@ -232,14 +226,12 @@
       letter-spacing: -.01em;
       color: #202833;
     }
-    /* 正文 */
     .back p, .glass-section p {
       margin: 0;
       color: #344051;
       font-size: clamp(15px, 2vw, 18px);
       line-height: 1.9;
     }
-    /* 区域提示语（蓝色，2s 一跳） */
     .section-hint {
       margin: 0;
       color: #7a8fc0 !important;
@@ -249,9 +241,7 @@
       animation-delay: .3s;
       will-change: transform;
     }
-    .touch-hint {
-      display: none;
-    }
+    .touch-hint { display: none; }
     .tags { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
     .tag {
       border-radius: 999px;
@@ -263,7 +253,6 @@
     }
     .tag.red { border-color: rgba(220,32,49,.48); background: rgba(220,32,49,.14); }
     .tag.blue { border-color: rgba(55,109,255,.5); background: rgba(55,109,255,.15); }
-    /* 分隔文字 */
     .spacer {
       min-height: 18vh;
       display: grid; place-items: center;
@@ -335,7 +324,6 @@
         transform .55s cubic-bezier(.16, 1, .3, 1),
         box-shadow .4s ease;
     }
-    /* 液态高光 —— 底部微光弧 */
     .art-card::after {
       content: '';
       position: absolute;
@@ -355,7 +343,6 @@
       position: relative;
       z-index: 3;
     }
-    /* 悬停 —— 3D 倾斜，由 mousemove 驱动 */
     .art-card.is-pulled {
       z-index: 80 !important;
       box-shadow:
@@ -365,7 +352,6 @@
         inset 0 1px 0 rgba(255,255,255,.82);
       filter: brightness(1.08);
     }
-    /* 点击回弹 */
     @keyframes cardTap {
       0%   { scale: 1; }
       35%  { scale: 0.93; }
@@ -382,6 +368,7 @@
     .art-stack.is-touch-preview .art-card.is-pulled {
       filter: brightness(1.1) saturate(1.08);
     }
+
     /* 图片灯箱 */
     .img-lightbox {
       position: fixed;
@@ -396,6 +383,7 @@
       opacity: 0;
       pointer-events: none;
       transition: opacity .28s cubic-bezier(.16, 1, .3, 1);
+      contain: content;
     }
     .img-lightbox.is-opening,
     .img-lightbox.is-open {
@@ -409,10 +397,12 @@
       height: min(90vh, 900px);
       overflow: hidden;
       border-radius: 8px;
-      background: #f7f8fb;
+      background: #181c22;
       box-shadow: 0 30px 90px rgba(0,0,0,.5);
       transform: translate3d(var(--origin-x, 0px), var(--origin-y, 0px), 0) scale(var(--origin-scale, .9));
       transform-origin: center center;
+      will-change: transform;
+      contain: strict;
       transition:
         transform .46s cubic-bezier(.16, 1, .3, 1),
         box-shadow .46s ease;
@@ -511,9 +501,8 @@
       padding: 2px 0;
       opacity: 1;
     }
-    .art-watermark {
-      opacity: .92;
-    }
+    .art-watermark { opacity: .92; }
+
     #lightboxCanvas {
       position: absolute;
       inset: 0;
@@ -524,6 +513,7 @@
       background: #181c22;
     }
     #lightboxImg { display: none; }
+
     @keyframes watermarkDrift {
       0%   { transform: translateX(0); }
       100% { transform: translateX(-50%); }
@@ -540,7 +530,6 @@
       letter-spacing: .12em;
       pointer-events: none;
     }
-    /* 炸毛跺脚 */
     @keyframes angryStomp {
       0%, 100%   { transform: translateY(0) rotate(0) scale(1); }
       5%         { transform: translateY(-10px) rotate(-5deg) scale(1.06); }
@@ -836,6 +825,15 @@
     </div>
   </div>
   <script>
+    /* ====== rAF 兼容包装（老 Android WebView fallback） ====== */
+    const requestFrame = window.requestAnimationFrame
+      || window.webkitRequestAnimationFrame
+      || (function(cb) { return window.setTimeout(cb, 67); });
+    const cancelFrame = window.cancelAnimationFrame
+      || window.webkitCancelAnimationFrame
+      || (function(id) { window.clearTimeout(id); });
+
+    /* ====== 翻转卡片 ====== */
     const flipCard = document.querySelector('.flip-card');
     const toggleFlip = () => {
       const flipped = flipCard.classList.toggle('is-flipped');
@@ -858,7 +856,7 @@
       }
     });
 
-    // ========== 扇形稿件堆叠 + 灯箱 ==========
+    /* ====== 扇形稿件堆叠 + 灯箱 ====== */
     const showcaseTouchArea = document.querySelector('#showcase > .content');
     const artStack = document.querySelector('.art-stack');
     const lightbox = document.getElementById('imgLightbox');
@@ -868,7 +866,7 @@
 
     const artworkCards = Array.from(artStack.querySelectorAll('.art-card'));
 
-    // —— 扇形布局（正弦弧线，自适应卡片数量） ——
+    /* 扇形布局 */
     const computeFanLayout = () => {
       const N = artworkCards.length;
       if (N === 0) return;
@@ -893,7 +891,7 @@
     computeFanLayout();
     artStack.style.opacity = '1';
 
-    // —— 悬停：elementFromPoint 精准命中，零边界抖动 ——
+    /* 悬停 */
     const TILT_MAX = 20;
     const PULL_UP  = 42;
     let pulledCard = null;
@@ -974,13 +972,13 @@
       return card;
     };
 
-    let pendingMove = null, rafId = null;
+    let pendingMove = null, moveRafId = null;
     artStack.addEventListener('mousemove', (e) => {
       if (lightboxOpen) return;
       pendingMove = e;
-      if (rafId) return;
-      rafId = requestAnimationFrame(() => {
-        rafId = null;
+      if (moveRafId) return;
+      moveRafId = requestFrame(() => {
+        moveRafId = null;
         const ev = pendingMove;
         if (!ev) return;
         pendingMove = null;
@@ -993,7 +991,7 @@
       leaveTimer = setTimeout(() => { releaseCard(pulledCard); }, 300);
     });
 
-    // —— 移动端触屏：长按进入独立预览，按舞台坐标稳定切换稿件 ——
+    /* ====== 移动端触屏 ====== */
     const LONG_PRESS_MS = 360;
     const TOUCH_SWITCH_HYSTERESIS = 0.16;
     const SCROLL_CANCEL_MOVE = 28;
@@ -1013,22 +1011,17 @@
     const getTouchCardForPoint = (clientX) => {
       const count = artworkCards.length;
       if (!count) return null;
-
       const rect = artStack.getBoundingClientRect();
       const progress = Math.min(Math.max((clientX - rect.left) / rect.width, 0), 0.999);
       const rawIndex = Math.floor(progress * count);
-
       if (!touchCard) return artworkCards[rawIndex] || null;
-
       const currentIndex = artworkCards.indexOf(touchCard);
       if (currentIndex < 0) return artworkCards[rawIndex] || null;
-
       const zoneStart = currentIndex / count;
       const zoneEnd = (currentIndex + 1) / count;
       const boundaryInset = TOUCH_SWITCH_HYSTERESIS / count;
       const canMoveLeft = currentIndex > 0 && progress < zoneStart - boundaryInset;
       const canMoveRight = currentIndex < count - 1 && progress > zoneEnd + boundaryInset;
-
       if (!canMoveLeft && !canMoveRight) return touchCard;
       return artworkCards[rawIndex] || touchCard;
     };
@@ -1054,7 +1047,6 @@
         if (touchCard) tiltTouchCardAtPoint(touchCard, clientX, clientY);
         return;
       }
-
       clearTimeout(leaveTimer);
       releaseCard(touchCard, true);
       pullCard(card);
@@ -1098,7 +1090,6 @@
         return;
       }
       if (!touchPreviewActive) return;
-
       e.preventDefault();
       updateTouchPreviewTarget(t.clientX, t.clientY);
     }, { passive: false });
@@ -1121,7 +1112,7 @@
       resetTouchPreview();
     });
 
-    // —— 灯箱 ——
+    /* ====== 灯箱 ====== */
     const getScrollbarWidth = () => Math.max(0, window.innerWidth - document.documentElement.clientWidth);
 
     const lockPageScroll = () => {
@@ -1152,9 +1143,10 @@
       const mediaHeight = parseMediaDimension(card, 'artHeight');
       const aspectWidth = mediaWidth || (src.includes('avatar-preview') ? 640 : 1791);
       const aspectHeight = mediaHeight || (src.includes('avatar-preview') ? 640 : 2133);
-      const pad = isTouchLikeDevice() ? 24 : 48; // 灯箱 padding 上下/左右各 12/24px
+      const pad = isTouchLikeDevice() ? 24 : 48;
       const availW = window.innerWidth - pad;
       const availH = window.innerHeight - pad;
+      const DPR = Math.min(window.devicePixelRatio || 1, 2);
       const targetScale = Math.min(
         availW * 0.95 / aspectWidth,
         availH * 0.95 / aspectHeight,
@@ -1185,12 +1177,19 @@
       lightboxFrame.style.removeProperty('transform');
     };
 
-    // —— 灯箱 Canvas 水印合成（单层渲染，避免图片+水印 GPU 分层闪烁） ——
+    /* ====== Canvas 水印合成（优化版） ======
+     *  核心策略：
+     *  1. 离屏 canvas 预渲染静态层（底色 + 图片），避免每帧 decode + scale
+     *  2. rAF 驱动动画，与浏览器刷新同步，不掉帧
+     *  3. 每帧只需：blit 离屏层 → 绘制水印文字
+     *  4. rAF 兼容包装（老 Android WebView 降级到 ~15fps）
+     */
     const DPR = Math.min(window.devicePixelRatio || 1, 2);
     let lightboxCanvasEl = null;
     let lightboxCanvasCtx = null;
-    let watermarkTimerId = null;
+    let watermarkAnimId = null;
     let watermarkPhase = 0;
+    let offscreen = null;
 
     const startLightboxWatermark = () => {
       const canvas = document.getElementById('lightboxCanvas');
@@ -1222,7 +1221,23 @@
         lightboxCanvasCtx = ctx;
         watermarkPhase = 0;
 
-        // 预计算所有不变量，draw() 里不再重复算
+        /* 离屏 canvas：预渲染静态层（底色 + 已解码图片），
+           避免每帧 drawImage(img) 重复触发 decode + scale */
+        offscreen = document.createElement('canvas');
+        offscreen.width = newBufW;
+        offscreen.height = newBufH;
+        const offCtx = offscreen.getContext('2d');
+        offCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
+        offCtx.fillStyle = '#181c22';
+        offCtx.fillRect(0, 0, w, h);
+        if (img.complete && img.naturalWidth > 0) {
+          const imgScale = Math.min(w / img.naturalWidth, h / img.naturalHeight);
+          const iw = img.naturalWidth * imgScale;
+          const ih = img.naturalHeight * imgScale;
+          offCtx.drawImage(img, (w - iw) / 2, (h - ih) / 2, iw, ih);
+        }
+
+        /* 预计算水印参数（整个生命周期不变） */
         const fontSize = Math.round(Math.min(Math.max(30, Math.min(w, h) * 0.068), 56));
         ctx.font = '750 ' + fontSize + 'px "Noto Serif CJK SC", "Source Han Serif SC", "Songti SC", "STSong", "Noto Serif SC", "SimSun", serif';
         ctx.textAlign = 'left';
@@ -1238,23 +1253,16 @@
         const rows = 6;
         const ys = Array.from({ length: rows }, (_, row) => (row - (rows - 1) / 2) * fontSize * 3.8);
 
-        // 图片缩放参数（图片尺寸不变，只算一次）
-        const imgScale = img.complete && img.naturalWidth > 0
-          ? Math.min(w / img.naturalWidth, h / img.naturalHeight) : 0;
-        const iw = imgScale ? img.naturalWidth * imgScale : 0;
-        const ih = imgScale ? img.naturalHeight * imgScale : 0;
-        const ix = (w - iw) / 2;
-        const iy = (h - ih) / 2;
-
         const draw = () => {
           if (lightboxCanvasCtx !== ctx) return;
 
-          // 底色 + 原图
-          ctx.fillStyle = '#181c22';
-          ctx.fillRect(0, 0, w, h);
-          if (imgScale) ctx.drawImage(img, ix, iy, iw, ih);
+          /* 从离屏 canvas 直接 blit 静态层（GPU 加速，极快）
+             显式指定目标宽高 w×h（逻辑像素），配合 DPR 变换后
+             恰好填满 canvas 物理像素，避免因离屏 canvas 自然尺寸
+             在 DPR>1 时被二次放大导致只显示左上角 */
+          ctx.drawImage(offscreen, 0, 0, w, h);
 
-          // 滚动水印
+          /* 滚动水印 */
           ctx.save();
           ctx.translate(w / 2, h / 2);
           ctx.rotate(-16 * Math.PI / 180);
@@ -1264,7 +1272,7 @@
           ctx.shadowOffsetX = 1;
           ctx.shadowOffsetY = 1;
 
-          watermarkPhase = (watermarkPhase + 1.1) % step;
+          watermarkPhase = (watermarkPhase + 0.55) % step;
 
           for (let row = 0; row < rows; row++) {
             const y = ys[row];
@@ -1276,7 +1284,7 @@
           }
 
           ctx.restore();
-          watermarkTimerId = setTimeout(draw, 34);
+          watermarkAnimId = requestFrame(draw);
         };
         draw();
       };
@@ -1289,20 +1297,20 @@
     };
 
     const stopLightboxWatermark = () => {
-      if (watermarkTimerId) {
-        clearTimeout(watermarkTimerId);
-        watermarkTimerId = null;
+      if (watermarkAnimId) {
+        cancelFrame(watermarkAnimId);
+        watermarkAnimId = null;
       }
       lightboxCanvasCtx = null;
       lightboxCanvasEl = null;
+      offscreen = null;
     };
 
     const openLightbox = (src, sourceCard = null) => {
       setLightboxOriginFromCard(sourceCard, src);
       lightboxImg.src = src;
 
-      // 同步铺好 canvas 底色，getImageData 强制提交缓冲区
-      // DPR 缩放保证高清屏不糊
+      /* 同步预铺 canvas 底色 + 强制提交 GPU 纹理 */
       const canvas = document.getElementById('lightboxCanvas');
       const frame = document.querySelector('.lightbox-frame');
       if (canvas && frame && frame.offsetWidth > 0) {
@@ -1313,7 +1321,7 @@
         canvas.style.width = w + 'px';
         canvas.style.height = h + 'px';
         const ctx = canvas.getContext('2d', { alpha: false });
-        ctx.scale(DPR, DPR);
+        ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
         ctx.fillStyle = '#181c22';
         ctx.fillRect(0, 0, w, h);
         ctx.getImageData(0, 0, 1, 1);
@@ -1324,10 +1332,11 @@
       lightboxOpen = true;
       lockPageScroll();
       startLightboxWatermark();
-      requestAnimationFrame(() => {
+      requestFrame(() => {
         lightbox.classList.replace('is-opening', 'is-open');
       });
     };
+
     const closeLightbox = () => {
       stopLightboxWatermark();
       lightbox.classList.remove('is-opening', 'is-open');
@@ -1341,6 +1350,7 @@
         unlockPageScroll();
       }, 320);
     };
+
     lightbox.addEventListener('touchend', () => {
       if (isTouchLikeDevice()) closeLightbox();
     }, { passive: false });
@@ -1370,7 +1380,7 @@
       }, 300);
     });
 
-    // 右键与拖拽拦截
+    /* 右键与拖拽拦截 */
     artStack.addEventListener('contextmenu', (e) => e.preventDefault());
     document.querySelectorAll('#showcase, #showcase *').forEach((el) => {
       el.addEventListener('contextmenu', (e) => e.preventDefault());
