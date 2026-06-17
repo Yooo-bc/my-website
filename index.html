@@ -300,14 +300,19 @@
         0 8px 40px rgba(31,38,135,.18),
         inset 0 2px 16px rgba(255,255,255,.35);
       cursor: pointer;
-      transform: translate(var(--fan-x), var(--fan-y)) rotate(var(--fan-rotate)) scale(var(--fan-scale));
+      transform: translate(var(--fan-x), calc(var(--fan-y) + var(--float-y))) rotate(var(--fan-rotate)) scale(var(--fan-scale));
       transform-origin: bottom center;
       z-index: var(--stack-z);
       /* will-change 仅交互时由 JS 动态添加，避免闲置时占用 GPU 层 */
       contain: layout style;
+      opacity: 0;
       transition:
         transform .45s ease-out,
+        opacity .75s cubic-bezier(.4, 0, .2, 1),
         box-shadow .4s ease;
+    }
+    .glass-section.is-visible .art-card {
+      opacity: 1;
     }
     .art-card::after {
       content: '';
@@ -428,6 +433,19 @@
       pointer-events: none;
       -webkit-user-drag: none;
       user-select: none;
+    }
+    @property --float-y {
+      syntax: '<length>';
+      initial-value: 0px;
+      inherits: false;
+    }
+    @keyframes cardFloat {
+      0%, 100% { --float-y: 0px; }
+      50%      { --float-y: -8px; }
+    }
+    .art-card.is-floating {
+      animation: cardFloat var(--float-dur, 4s) ease-in-out infinite;
+      animation-delay: var(--float-delay, 0s);
     }
     .art-overlay {
       position: absolute;
@@ -688,7 +706,7 @@
       </div>
     </section>
     <div class="spacer"></div>
-    <section class="glass-section" id="showcase">
+    <section class="glass-section reveal" id="showcase">
       <div class="content" style="text-align:left">
         <h2>狼的照片</h2>
         <p class="section-hint desktop-copy">摸摸看，点开能放大</p>
@@ -872,6 +890,35 @@
     };
     computeFanLayout();
 
+    /* 稿件卡片随机渐入次序 */
+    const delays = [0, 0.12, 0.28, 0.4].sort(() => Math.random() - 0.5);
+    artworkCards.forEach((card, i) => {
+      card.style.transitionDelay = delays[i % delays.length] + 's';
+    });
+
+    /* 图片加载后浮动效果，每张卡错开节奏 */
+    artworkCards.forEach((card) => {
+      const img = card.querySelector('img');
+      if (!img) return;
+      const duration = 3.2 + Math.random() * 2.4;  // 3.2~5.6s 随机周期
+      const delay = Math.random() * 1.5;            // 0~1.5s 随机初相
+      const onLoad = () => {
+        card.style.setProperty('--float-dur', duration + 's');
+        card.style.setProperty('--float-delay', delay + 's');
+        card.classList.add('is-floating');
+      };
+      if (img.complete) onLoad();
+      else img.addEventListener('load', onLoad, { once: true });
+    });
+
+    /* 稿件卡片滚动渐入 */
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) entry.target.classList.add('is-visible');
+      });
+    }, { threshold: 0.2 });
+    document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
+
     /* 悬停 */
     const TILT_MAX = 20;
     const PULL_UP  = 42;
@@ -880,6 +927,7 @@
 
     const pullCard = (card) => {
       card.style.willChange = 'transform';
+      card.style.animationPlayState = 'paused';  // 悬停时暂停浮动，避免动画冲突
       card.style.transition = 'transform .1s ease-out, box-shadow .35s ease, filter .35s ease';
       card.style.setProperty('--stack-z', '80');
       card.classList.add('is-pulled');
@@ -888,9 +936,10 @@
 
     const releaseCard = (card, fast = false) => {
       card.style.willChange = 'auto';
+      card.style.animationPlayState = '';  // 恢复浮动动画
       card.style.transition = fast
-        ? 'transform .25s cubic-bezier(.16, 1, .3, 1), box-shadow .25s ease, filter .25s ease'
-        : 'transform .5s cubic-bezier(.16, 1, .3, 1), box-shadow .4s ease, filter .4s ease';
+        ? 'transform .25s ease-out, box-shadow .25s ease, filter .25s ease'
+        : 'transform .5s ease-out, box-shadow .4s ease, filter .4s ease';
       card.style.transform = '';
       card.classList.remove('is-pulled');
       const idx = artworkCards.indexOf(card);
