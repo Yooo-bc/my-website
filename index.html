@@ -61,6 +61,10 @@
       100% { transform: rotate(-22deg) translateX(-25%); }
     }
     .bg-pinyin-slow { animation-name: pinyinScrollSlow; }
+    .bg-pinyin.is-paused,
+    .bg-pinyin-slow.is-paused {
+      animation-play-state: paused;
+    }
     @keyframes pinyinScrollSlow {
       0%   { transform: rotate(-22deg) translateX(-15%); }
       100% { transform: rotate(-22deg) translateX(10%); }
@@ -1398,6 +1402,20 @@
       });
     }, { threshold: 0.25 });
     document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
+
+    /* ====== 背景拼音：滚动时暂停动画省 GPU ====== */
+    const pinyinLayers = document.querySelectorAll('.bg-pinyin, .bg-pinyin-slow');
+    let scrollPauseTimer = null;
+    window.addEventListener('scroll', () => {
+      if (!scrollPauseTimer) {
+        pinyinLayers.forEach((el) => el.classList.add('is-paused'));
+      }
+      clearTimeout(scrollPauseTimer);
+      scrollPauseTimer = setTimeout(() => {
+        pinyinLayers.forEach((el) => el.classList.remove('is-paused'));
+        scrollPauseTimer = null;
+      }, 200);
+    }, { passive: true });
   </script>
   <div class="bg-pinyin" aria-hidden="true">
     <span>BÓ</span><span>CHUĀN</span><span>BÓ</span><span>CHUĀN</span><span>BÓ</span><span>CHUĀN</span><span>BÓ</span><span>CHUĀN</span>
